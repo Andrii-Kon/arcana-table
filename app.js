@@ -1,0 +1,1424 @@
+const SPREADS = {
+  three: {
+    id: 'three',
+    name: 'Past / Present / Future',
+    description: 'A quick read of your past, present, and future energy.',
+    layout: 'three',
+    positions: [
+      { label: 'Past', detail: 'What shaped this moment.' },
+      { label: 'Present', detail: 'Where you stand now.' },
+      { label: 'Future', detail: 'What is gathering ahead.' },
+    ],
+  },
+  // life: {
+  //   id: 'life',
+  //   name: 'Love / Career / Finance',
+  //   description: 'A practical check-in on love, career, and money.',
+  //   layout: 'three',
+  //   positions: [
+  //     { label: 'Love', detail: 'Matters of the heart.' },
+  //     { label: 'Career', detail: 'Work, purpose, and momentum.' },
+  //     { label: 'Finance', detail: 'Money flow and material stability.' },
+  //   ],
+  // },
+  horseshoe: {
+    id: 'horseshoe',
+    name: 'Horseshoe',
+    description: 'A seven-card arc that traces momentum and obstacles.',
+    layout: 'horseshoe',
+    positions: [
+      { label: 'Past', detail: 'The roots of the situation.', offset: -18 },
+      { label: 'Present', detail: 'The current energy.', offset: -12 },
+      { label: 'Hidden', detail: 'What is unseen or unconscious.', offset: -4 },
+      { label: 'Obstacles', detail: 'The tension to navigate.', offset: 6 },
+      { label: 'External', detail: 'Influences around you.', offset: -4 },
+      { label: 'Advice', detail: 'The best approach right now.', offset: -12 },
+      { label: 'Outcome', detail: 'Where the path may lead.', offset: -18 },
+    ],
+  },
+  celtic: {
+    id: 'celtic',
+    name: 'Celtic Cross',
+    description: 'A ten-card classic for deeper insight and layered themes.',
+    layout: 'celtic',
+    positions: [
+      { label: 'Present', detail: 'Situation at the center.', area: 'pos1' },
+      { label: 'Crossing', detail: 'The challenge crossing you.', area: 'pos2' },
+      { label: 'Conscious', detail: 'Crown or current focus.', area: 'pos3' },
+      { label: 'Subconscious', detail: 'Foundation below.', area: 'pos4' },
+      { label: 'Past', detail: 'What is leaving or behind.', area: 'pos5' },
+      { label: 'Near Future', detail: 'What approaches next.', area: 'pos6' },
+      { label: 'Self', detail: 'Where you are right now.', area: 'pos7' },
+      { label: 'Environment', detail: 'External influences.', area: 'pos8' },
+      { label: 'Hopes & Fears', detail: 'Inner tensions and wishes.', area: 'pos9' },
+      { label: 'Outcome', detail: 'The likely resolution.', area: 'pos10' },
+    ],
+  },
+};
+
+const deckEl = document.getElementById('deck');
+const deckHintEl = document.getElementById('deck-hint');
+const tableEl = document.querySelector('.table');
+const slotsEl = document.getElementById('slots');
+const readingEl = document.getElementById('reading');
+const readingGridEl = document.getElementById('reading-grid');
+const statusEl = document.getElementById('status');
+const resetBtn = document.getElementById('reset');
+const beginBtn = document.getElementById('begin');
+const revealAllBtn = document.getElementById('reveal-all');
+const spreadDescEl = document.getElementById('spread-desc');
+const spreadButtons = Array.from(document.querySelectorAll('[data-spread]'));
+let currentSpread = SPREADS.three;
+let slots = [];
+let deck = [];
+let drawn = [];
+const allowReversed = false;
+let hasDealt = false;
+let isDealing = false;
+
+const shuffle = (items) => {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
+const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
+
+const sentenceize = (text) => {
+  const trimmed = text.replace(/\s+/g, ' ').trim();
+  if (!trimmed) return '';
+  if (/[.!?]$/.test(trimmed)) return trimmed;
+  return `${trimmed}.`;
+};
+
+const slugifyPosition = (label) =>
+  String(label || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_');
+
+const getPersonalizedInterpretation = (positionLabel, cardName) => {
+  const key = slugifyPosition(positionLabel);
+  const byPos = window.PERSONALIZED_INTERPRETATIONS?.[key];
+  if (!byPos) return '';
+
+  if (byPos[cardName]) return byPos[cardName];
+  const withoutThe = cardName.replace(/^the\s+/i, '');
+  if (withoutThe !== cardName && byPos[withoutThe]) return byPos[withoutThe];
+
+  const target = cardName.toLowerCase();
+  const foundKey = Object.keys(byPos).find((k) => k.toLowerCase() === target);
+  if (foundKey) return byPos[foundKey];
+
+  const targetWithoutThe = withoutThe.toLowerCase();
+  const foundKey2 = Object.keys(byPos).find((k) => k.toLowerCase() === targetWithoutThe);
+  if (foundKey2) return byPos[foundKey2];
+
+  return '';
+};
+
+const lowerFirst = (text) => (text ? text.charAt(0).toLowerCase() + text.slice(1) : '');
+
+const STOP_WORDS = new Set([
+  'a',
+  'an',
+  'all',
+  'and',
+  'any',
+  'are',
+  'as',
+  'at',
+  'both',
+  'after',
+  'against',
+  'among',
+  'across',
+  'before',
+  'behind',
+  'beside',
+  'between',
+  'be',
+  'been',
+  'being',
+  'but',
+  'by',
+  'each',
+  'can',
+  'could',
+  'did',
+  'do',
+  'does',
+  'either',
+  'every',
+  'for',
+  'from',
+  'he',
+  'her',
+  'hers',
+  'had',
+  'has',
+  'have',
+  'him',
+  'his',
+  'here',
+  'how',
+  'if',
+  'in',
+  'into',
+  'is',
+  'it',
+  'its',
+  'many',
+  'may',
+  'more',
+  'most',
+  'much',
+  'me',
+  'might',
+  'mine',
+  'neither',
+  'no',
+  'nor',
+  'not',
+  'of',
+  'on',
+  'only',
+  'other',
+  'or',
+  'our',
+  'ours',
+  'over',
+  'per',
+  'shall',
+  'should',
+  'she',
+  'so',
+  'some',
+  'such',
+  'than',
+  'that',
+  'the',
+  'their',
+  'them',
+  'then',
+  'there',
+  'these',
+  'they',
+  'this',
+  'those',
+  'through',
+  'to',
+  'toward',
+  'towards',
+  'under',
+  'upon',
+  'us',
+  'via',
+  'very',
+  'was',
+  'were',
+  'what',
+  'when',
+  'where',
+  'which',
+  'while',
+  'who',
+  'whom',
+  'within',
+  'with',
+  'without',
+  'would',
+  'you',
+  'your',
+  'yours',
+  'yet',
+]);
+
+const NEGATIVE_CUES = new Set([
+  'adversity',
+  'anxiety',
+  'bad',
+  'betrayal',
+  'block',
+  'blocks',
+  'burden',
+  'conflict',
+  'corruption',
+  'crisis',
+  'cruelty',
+  'danger',
+  'deceit',
+  'death',
+  'delay',
+  'destruction',
+  'disappointment',
+  'discord',
+  'doubt',
+  'embarrassment',
+  'embarrassments',
+  'end',
+  'ending',
+  'evil',
+  'failure',
+  'false',
+  'fear',
+  'guilt',
+  'grief',
+  'hostility',
+  'illness',
+  'indecision',
+  'inertia',
+  'instability',
+  'jealousy',
+  'lethargy',
+  'loss',
+  'losses',
+  'misfortune',
+  'mortality',
+  'obstacle',
+  'obstacles',
+  'oppression',
+  'pain',
+  'perplexity',
+  'petrifaction',
+  'poverty',
+  'privation',
+  'regret',
+  'risk',
+  'ruin',
+  'sadness',
+  'sickness',
+  'sleep',
+  'somnambulism',
+  'sorrow',
+  'strife',
+  'trouble',
+  'war',
+  'weakness',
+  'wrath',
+  'worry',
+]);
+
+const hasNegativeCue = (text) => {
+  if (!text) return false;
+  const cleaned = text.toLowerCase().replace(/[^a-z\s-]/g, ' ');
+  const tokens = cleaned.split(/\s+/).filter(Boolean);
+  return tokens.some((token) => NEGATIVE_CUES.has(token));
+};
+
+const NOISE_WORDS = new Set([
+  'card',
+  'cards',
+  'account',
+  'accounts',
+  'concerning',
+  'connected',
+  'certain',
+  'church',
+  'churches',
+  'countryman',
+  'countrywoman',
+  'dark',
+  'fair',
+  'direction',
+  'directions',
+  'help',
+  'otherwise',
+  'querent',
+  'person',
+  'people',
+  'man',
+  'woman',
+  'male',
+  'female',
+  'child',
+  'children',
+  'young',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'matter',
+  'matters',
+  'meaning',
+  'meanings',
+  'remain',
+  'remains',
+  'remaining',
+  'shews',
+  'shows',
+  'side',
+  'symbolise',
+  'symbolised',
+  'symbolises',
+  'symbolize',
+  'symbolizes',
+  'view',
+  'case',
+  'tending',
+  'unaltered',
+  'species',
+  'thing',
+  'things',
+  'surface',
+  'position',
+  'positions',
+  'plane',
+  'further',
+  'however',
+  'another',
+  'others',
+  'other',
+  'same',
+  'also',
+  'again',
+  'still',
+  'even',
+]);
+
+const normalizeKeyword = (phrase) => {
+  const cleaned = phrase
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return null;
+  const tokens = cleaned.split(' ').filter(Boolean);
+  const filtered = tokens.filter(
+    (token) => !STOP_WORDS.has(token) && !NOISE_WORDS.has(token)
+  );
+  if (!filtered.length) return null;
+  const sliced = filtered.length > 2 ? filtered.slice(-2) : filtered;
+  const candidate = sliced.join(' ');
+  if (candidate.length < 3) return null;
+  return candidate
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const parseKeywords = (text, maxItems = 3) => {
+  if (!text) return [];
+  const cleaned = text.replace(/\s+/g, ' ').replace(/[.]/g, '').trim();
+  if (!cleaned) return [];
+  const narrativePattern = /\b(he|she|his|her|him|you|your)\b/;
+  const segments = cleaned
+    .split(/[.;]/)
+    .flatMap((segment) => segment.split(','))
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  const keywords = [];
+  for (const segment of segments) {
+    if (narrativePattern.test(segment.toLowerCase())) continue;
+    const candidate = normalizeKeyword(segment);
+    if (!candidate) continue;
+    if (!keywords.includes(candidate)) {
+      keywords.push(candidate);
+    }
+    if (keywords.length >= maxItems) break;
+  }
+  if (keywords.length < maxItems) {
+    const tokens = cleaned
+      .toLowerCase()
+      .replace(/[^a-z\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+    for (const token of tokens) {
+      if (STOP_WORDS.has(token) || NOISE_WORDS.has(token)) continue;
+      const candidate = token.charAt(0).toUpperCase() + token.slice(1);
+      if (!keywords.includes(candidate)) {
+        keywords.push(candidate);
+      }
+      if (keywords.length >= maxItems) break;
+    }
+  }
+  return keywords.slice(0, maxItems);
+};
+
+const getKeywords = (interpretation) => {
+  if (Array.isArray(interpretation.keywordsList) && interpretation.keywordsList.length) {
+    return interpretation.keywordsList;
+  }
+  return parseKeywords(interpretation.keywords, 3);
+};
+
+const normalizeMeaningLead = (text) => {
+  let cleaned = text.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+  cleaned = cleaned.replace(/^also\s+/i, '');
+  cleaned = cleaned.replace(/^it is a card of\s+/i, '');
+  cleaned = cleaned.replace(/^it is\s+/i, '');
+  cleaned = cleaned.replace(/^they are\s+/i, '');
+  cleaned = cleaned.replace(/^(he|she) is\s+/i, '');
+  cleaned = cleaned.replace(/^(it|this|there)\s+(signifies|indicates|suggests|denotes|means)\s+/i, '');
+  cleaned = cleaned.replace(/^the card\s+(signifies|indicates|suggests|denotes|means)\s+/i, '');
+  cleaned = cleaned.replace(/^the card\s+/i, '');
+  cleaned = cleaned.replace(/^a card of\s+/i, '');
+  const prefixPatterns = [
+    /^(for once)\s+/i,
+    /^(for|on|in|with|without|from|toward|towards|against|under|over)\s+/i,
+    /^(almost|once)\s+/i,
+  ];
+  let trimmed = cleaned;
+  let stripped = true;
+  while (stripped) {
+    stripped = false;
+    for (const pattern of prefixPatterns) {
+      if (pattern.test(trimmed)) {
+        trimmed = trimmed.replace(pattern, '');
+        stripped = true;
+      }
+    }
+  }
+  cleaned = trimmed.trim();
+  return cleaned.trim();
+};
+
+const formatKeywordList = (keywords) => {
+  if (!keywords.length) return '';
+  const lowered = keywords.map((keyword) => keyword.toLowerCase());
+  if (lowered.length === 1) return lowered[0];
+  if (lowered.length === 2) return `${lowered[0]} and ${lowered[1]}`;
+  return `${lowered.slice(0, -1).join(', ')}, and ${lowered[lowered.length - 1]}`;
+};
+
+const formatKeywordsForDisplay = (keywords, mode) => {
+  if (mode !== 'shadow') return keywords;
+  return keywords.map((keyword) =>
+    hasNegativeCue(keyword) ? keyword : `Blocked ${keyword}`
+  );
+};
+
+const buildReversedShadowNarrative = (card, positionLabel, keywords) => {
+  const list = formatKeywordList(keywords);
+  if (list) {
+    return `${card.name} points to an imbalance around ${list}.`;
+  }
+  return `${card.name} signals an inward or blocked energy.`;
+};
+
+const buildAdviceForReading = (keywords, orientation, meaningText) => {
+  const safeThemes = (keywords || []).filter((keyword) => !hasNegativeCue(keyword));
+  const theme = safeThemes.length ? lowerFirst(safeThemes[0]) : '';
+  const caution = !safeThemes.length && hasNegativeCue(meaningText);
+  const withTheme = (templates) =>
+    templates.map((template) => template.replace('{theme}', theme));
+
+  const positiveTemplates = theme
+    ? withTheme([
+        'Choose one small step today that supports {theme}.',
+        'Let {theme} guide one practical decision this week.',
+        'Anchor {theme} with a simple, concrete action.',
+        'Commit to a steady action that strengthens {theme}.',
+      ])
+    : [];
+
+  const reversedTemplates = theme
+    ? withTheme([
+        'Rebalance {theme} by setting one clear boundary.',
+        'Ground {theme} with one small, steady action.',
+        'Bring {theme} back to basics with a simple next step.',
+      ])
+    : [];
+
+  const neutralTemplates = [
+    'Choose one small, concrete step and do it today.',
+    'Pick the simplest next action and follow through.',
+    'Name what matters most, then take one grounded step.',
+  ];
+
+  const cautionTemplates = [
+    'Pause, simplify, and focus on what you can control.',
+    'Create a boundary, then take one stabilizing step.',
+    'Name the pressure you feel and soften it with one small action.',
+  ];
+
+  let pool = [];
+  if (orientation === 'reversed') {
+    pool = pool.concat(reversedTemplates, neutralTemplates);
+  } else {
+    pool = pool.concat(positiveTemplates, neutralTemplates);
+  }
+  if (caution) {
+    pool = pool.concat(cautionTemplates);
+  }
+  const unique = Array.from(new Set(pool));
+  return unique.length ? pickRandom(unique) : 'Take one small, grounded step today.';
+};
+
+const normalizeInlineSecondPerson = (text) =>
+  text
+    .replace(/\bYou['\u2019]s\b/g, 'your')
+    .replace(/\bYour\b/g, 'your')
+    .replace(/\bYou\b/g, 'you');
+
+const normalizeSentenceSecondPerson = (text) =>
+  text
+    .replace(/\bYou['\u2019]s\b/g, 'your')
+    .replace(
+      /\b(by|to|for|with|from|of|about|against|into|over|under|upon|around|between)\s+You\b/g,
+      (_, preposition) => `${preposition} you`
+    );
+
+const getPositionLead = (label) => {
+  const key = (label || '').toLowerCase().trim();
+  const map = new Map([
+    ['past', 'In your past, '],
+    ['present', 'Right now, '],
+    ['future', 'Ahead, '],
+    ['near future', 'In the near future, '],
+    ['outcome', 'If the current path continues, '],
+    ['conscious', 'On your mind, '],
+    ['subconscious', 'Under the surface, '],
+    ['crown', 'At the top of your mind, '],
+    ['foundation', 'At the root of this, '],
+    ['crossing', 'What is crossing you is that '],
+    ['self', 'How you are showing up is that '],
+    ['environment', 'Around you, '],
+    ['hopes & fears', 'In your hopes and fears, '],
+    ['advice', 'Your next best move is to notice that '],
+    ['hidden', 'What is hidden is that '],
+    ['obstacles', 'The obstacle here is that '],
+    ['external', 'From outside influences, '],
+    ['love', 'In love, '],
+    ['career', 'In career matters, '],
+    ['finance', 'With money and resources, '],
+  ]);
+  if (map.has(key)) return map.get(key);
+  return key ? `In the ${key} position, ` : 'In this position, ';
+};
+
+const buildPositionAwareInterpretation = (
+  card,
+  positionLabel,
+  orientation,
+  meaningText,
+  keywords,
+  actionHint
+) => {
+  const lead = getPositionLead(positionLabel);
+  const sentence = sentenceize(meaningText);
+  const normalized = normalizeMeaningLead(sentence) || sentence;
+  const softened = normalizeSentenceSecondPerson(normalized);
+  const summary = normalizeInlineSecondPerson(lowerFirst(softened));
+
+  // Ensure we get a grammatical continuation after leads like "is that ..."
+  const lens = `${lead}${ensureClauseLead(summary)}`;
+
+  const chosenAction =
+    actionHint && String(actionHint).trim()
+      ? String(actionHint).trim()
+      : buildAdviceForReading(keywords, orientation, meaningText);
+  const actionSentence = sentenceize(normalizeSentenceSecondPerson(chosenAction));
+
+  return `${lens} ${actionSentence}`;
+};
+
+const ensureClauseLead = (text) => {
+  const trimmed = text.replace(/\s+/g, ' ').trim();
+  if (!trimmed) return '';
+  if (/^(that|whether|if)\b/i.test(trimmed)) return trimmed;
+  const firstWord = trimmed.split(/\s+/)[0]?.toLowerCase() || '';
+  const needsThat = new Set([
+    'is',
+    'are',
+    'was',
+    'were',
+    'be',
+    'been',
+    'being',
+    'has',
+    'have',
+    'had',
+    'can',
+    'could',
+    'should',
+    'would',
+    'may',
+    'might',
+    'must',
+    'will',
+    'you',
+    'do',
+    'does',
+    'did',
+  ]);
+  if (needsThat.has(firstWord)) return `that ${trimmed}`;
+  return trimmed;
+};
+
+const stripDuplicateCardLead = (text, cardName) => {
+  const trimmed = text.replace(/\s+/g, ' ').trim();
+  if (!trimmed) return '';
+  const name = cardName.replace(/\s+/g, ' ').trim();
+  if (!name) return trimmed;
+
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const allowLeadingThe = /^the\s+/i.test(name) ? '' : '(?:the\\s+)?';
+  const pattern = new RegExp(
+    `^${allowLeadingThe}${escaped}(?=\\b|\\s|[,:;.!?\\-–—])\\s*`,
+    'i'
+  );
+  const withoutName = trimmed.replace(pattern, '');
+  if (withoutName !== trimmed) {
+    return withoutName.replace(/^[,.:;!?\\-–—]+\\s*/, '');
+  }
+  return trimmed;
+};
+
+const capitalizeFirst = (text) => {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return '';
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+};
+
+const buildIntroText = (card, positionLabel, meaningText, keywords) => {
+  const sentence = sentenceize(meaningText);
+  if (!sentence) return '';
+  const normalized = normalizeMeaningLead(sentence);
+  const withoutLead = stripDuplicateCardLead(normalized || sentence, card.name);
+  const softened = normalizeSentenceSecondPerson(withoutLead);
+  const summary = normalizeInlineSecondPerson(softened);
+  // Meaning should be position-independent; avoid injecting "in the past position..." phrasing.
+  // Keep the original meaning's intent, lightly cleaned for readability.
+  const cleaned = sentenceize(summary);
+  return capitalizeFirst(cleaned);
+};
+
+const setStatus = (message) => {
+  statusEl.textContent = message;
+};
+
+const updateRevealAllState = () => {
+  if (!revealAllBtn) return;
+  revealAllBtn.hidden = !hasDealt || isDealing;
+  revealAllBtn.disabled = isDealing;
+};
+
+const revealAll = () => {
+  if (!hasDealt || isDealing) return;
+  // Reveal in spread order so status and final reading appear naturally.
+  slots.forEach((slot) => revealSlot(slot));
+};
+
+const fitCelticToViewport = () => {
+  if (!tableEl) return;
+  if (currentSpread.layout !== 'celtic') return;
+
+  // On roomy desktop viewports, keep the CSS-driven size (bigger cards).
+  // Auto-fitting is mainly needed for smaller heights (laptops/tablets/mobile).
+  if (window.matchMedia('(min-width: 1100px) and (min-height: 820px)').matches) {
+    tableEl.style.removeProperty('--card-width');
+    tableEl.style.removeProperty('--card-height');
+    return;
+  }
+
+  // Ensure slots have celtic layout rules applied for measurements.
+  slotsEl.className = `slots slots--${currentSpread.layout}`;
+
+  const wasHidden = slotsEl.hidden;
+  const prevVisibility = slotsEl.style.visibility;
+  if (wasHidden) {
+    slotsEl.hidden = false;
+    slotsEl.style.visibility = 'hidden';
+  }
+
+  // Build a probe slot so we can measure title/label space with real fonts.
+  const probeSlot = document.createElement('div');
+  probeSlot.className = 'slot';
+  probeSlot.style.position = 'absolute';
+  probeSlot.style.left = '-9999px';
+  probeSlot.style.top = '-9999px';
+  probeSlot.style.visibility = 'hidden';
+  probeSlot.style.pointerEvents = 'none';
+
+  const probeCard = document.createElement('div');
+  probeCard.className = 'card';
+  const back = document.createElement('div');
+  back.className = 'card-face card-back';
+  const front = document.createElement('div');
+  front.className = 'card-face card-front';
+  const img = document.createElement('img');
+  img.alt = '';
+  img.src = '';
+  front.appendChild(img);
+  probeCard.appendChild(back);
+  probeCard.appendChild(front);
+
+  const title = document.createElement('div');
+  title.className = 'slot-title';
+  title.textContent = 'Queen of Pentacles (Reversed)';
+
+  const label = document.createElement('div');
+  label.className = 'slot-label';
+  label.textContent = 'Hopes & Fears';
+
+  probeSlot.appendChild(probeCard);
+  probeSlot.appendChild(title);
+  probeSlot.appendChild(label);
+  slotsEl.appendChild(probeSlot);
+
+  const cw = probeCard.offsetWidth;
+  const ch = probeCard.offsetHeight;
+  const extra = Math.max(0, probeSlot.offsetHeight - ch);
+  probeSlot.remove();
+
+  if (!cw || !ch) {
+    if (wasHidden) {
+      slotsEl.hidden = true;
+      slotsEl.style.visibility = prevVisibility;
+    }
+    return;
+  }
+
+  const slotsStyle = window.getComputedStyle(slotsEl);
+  const rowGap = Number.parseFloat(slotsStyle.rowGap || slotsStyle.gap) || 0;
+  const rows = 4;
+
+  const tableRect = tableEl.getBoundingClientRect();
+  const available = Math.max(260, window.innerHeight - tableRect.top - 24);
+  const ratio = ch / cw || 1.55;
+
+  // Only shrink when necessary; otherwise keep the CSS-driven desktop size.
+  const required = rows * (ch + extra) + (rows - 1) * rowGap;
+  if (required <= available + 1) {
+    tableEl.style.removeProperty('--card-width');
+    tableEl.style.removeProperty('--card-height');
+  } else {
+    const maxCardH = Math.floor((available - (rows - 1) * rowGap - rows * extra) / rows);
+    const maxCardWFromH = Math.floor(maxCardH / ratio);
+
+    // Clamp shrink floor by breakpoint (restore phone sizing).
+    // If still too tall at the floor, prefer overflow over micro-cards.
+    const minW = window.matchMedia('(max-width: 540px)').matches
+      ? 60
+      : window.matchMedia('(max-width: 720px)').matches
+        ? 72
+        : 112;
+    if (maxCardWFromH > 0) {
+      const nextW = Math.max(minW, Math.min(maxCardWFromH, cw));
+      tableEl.style.setProperty('--card-width', `${nextW}px`);
+      tableEl.style.setProperty('--card-height', `${Math.round(nextW * ratio)}px`);
+    }
+  }
+
+  if (wasHidden) {
+    slotsEl.hidden = true;
+    slotsEl.style.visibility = prevVisibility;
+  }
+};
+
+const primeHorseshoeCardSize = () => {
+  if (!tableEl) return;
+  if (currentSpread.layout !== 'horseshoe') return;
+
+  // Ensure slots have horseshoe padding rules applied for measurements.
+  slotsEl.className = `slots slots--${currentSpread.layout}`;
+
+  const wasHidden = slotsEl.hidden;
+  const prevVisibility = slotsEl.style.visibility;
+  if (wasHidden) {
+    slotsEl.hidden = false;
+    slotsEl.style.visibility = 'hidden';
+  }
+
+  const slotsStyle = window.getComputedStyle(slotsEl);
+  const padL = Number.parseFloat(slotsStyle.paddingLeft) || 0;
+  const padR = Number.parseFloat(slotsStyle.paddingRight) || 0;
+
+  const n = currentSpread.positions.length || 7;
+  const width = slotsEl.clientWidth || slotsEl.getBoundingClientRect().width;
+  if (!width) {
+    if (wasHidden) {
+      slotsEl.hidden = true;
+      slotsEl.style.visibility = prevVisibility;
+    }
+    return;
+  }
+
+  // Measure a probe `.card` so we get real px sizes even when custom properties use calc()/clamp().
+  const probe = document.createElement('div');
+  probe.className = 'card';
+  probe.style.position = 'absolute';
+  probe.style.left = '-9999px';
+  probe.style.top = '-9999px';
+  probe.style.visibility = 'hidden';
+  probe.style.pointerEvents = 'none';
+  tableEl.appendChild(probe);
+  const cwInitial = probe.offsetWidth;
+  const chInitial = probe.offsetHeight;
+  probe.remove();
+
+  if (!cwInitial || !chInitial) {
+    if (wasHidden) {
+      slotsEl.hidden = true;
+      slotsEl.style.visibility = prevVisibility;
+    }
+    return;
+  }
+  const ratio = chInitial / cwInitial || 1.65;
+  let cw = cwInitial;
+
+  // Mirror the overlap-shrinking logic so the deck is sized correctly
+  // even before the first deal.
+  for (let pass = 0; pass < 2; pass += 1) {
+    const marginX = Math.max(12, Math.round(cw * 0.1));
+    const left = padL + marginX;
+    const right = width - padR - marginX - cw;
+    const step = (right - left) / Math.max(1, n - 1);
+    const minStep = cw * 0.6;
+    if (step >= minStep - 0.5) break;
+
+    const maxCardWidth = Math.floor(step / 0.6);
+    if (maxCardWidth <= 0) break;
+    cw = maxCardWidth;
+  }
+
+  const nextWidth = `${Math.round(cw)}px`;
+  const nextHeight = `${Math.round(cw * ratio)}px`;
+  tableEl.style.setProperty('--card-width', nextWidth);
+  tableEl.style.setProperty('--card-height', nextHeight);
+
+  if (wasHidden) {
+    slotsEl.hidden = true;
+    slotsEl.style.visibility = prevVisibility;
+  }
+};
+
+const layoutHorseshoe = () => {
+  if (currentSpread.layout !== 'horseshoe') return;
+  if (!slots || slots.length !== currentSpread.positions.length) return;
+  if (slotsEl.hidden) return;
+
+  const n = slots.length;
+  const probeSlot = slots[0];
+  const probeCard = probeSlot?.querySelector('.card');
+  if (!probeCard) return;
+
+  const slotsStyle = window.getComputedStyle(slotsEl);
+  const padL = Number.parseFloat(slotsStyle.paddingLeft) || 0;
+  const padR = Number.parseFloat(slotsStyle.paddingRight) || 0;
+  const padT = Number.parseFloat(slotsStyle.paddingTop) || 0;
+  const padB = Number.parseFloat(slotsStyle.paddingBottom) || 0;
+
+  const measureLabelSpace = () => {
+    const titleEl = probeSlot.querySelector('.slot-title');
+    const labelEl = probeSlot.querySelector('.slot-label');
+    const titleH = titleEl ? titleEl.getBoundingClientRect().height : 0;
+    const labelH = labelEl ? labelEl.getBoundingClientRect().height : 0;
+    return titleH + labelH + 18;
+  };
+
+  const measure = () => {
+    // Use layout metrics (exclude transforms) so CSS scaling doesn't change slot positions.
+    // `getBoundingClientRect()` includes transforms, which would otherwise shift the arc layout.
+    const cw = probeCard.offsetWidth;
+    const ch = probeCard.offsetHeight;
+    return {
+      cw,
+      ch,
+      width: slotsEl.clientWidth,
+    };
+  };
+
+  const initial = measure();
+  if (!initial.cw || !initial.ch || !initial.width) return;
+  const ratio = initial.ch / initial.cw || 1.65;
+
+  // Iteratively shrink the horseshoe cards if the available width would cause >40% overlap.
+  for (let pass = 0; pass < 2; pass += 1) {
+    const { cw, width } = measure();
+    if (!cw || !width) return;
+    const marginX = Math.max(12, Math.round(cw * 0.1));
+    const left = padL + marginX;
+    const right = width - padR - marginX - cw;
+    const step = (right - left) / Math.max(1, n - 1);
+    const minStep = cw * 0.6; // >= 60% width visible => <= 40% overlap
+    if (step >= minStep - 0.5) break;
+
+    const maxCardWidth = Math.floor(step / 0.6);
+    if (maxCardWidth <= 0) break;
+    const nextWidth = `${maxCardWidth}px`;
+    const nextHeight = `${Math.round(maxCardWidth * ratio)}px`;
+    // Keep deck card size in sync with dealt cards.
+    tableEl?.style.setProperty('--card-width', nextWidth);
+    tableEl?.style.setProperty('--card-height', nextHeight);
+    slotsEl.style.setProperty('--card-width', nextWidth);
+    slotsEl.style.setProperty('--card-height', nextHeight);
+  }
+
+  const { cw, ch, width } = measure();
+  if (!cw || !ch || !width) return;
+
+  const labelSpace = measureLabelSpace();
+  const marginX = Math.max(12, Math.round(cw * 0.1));
+  const paddingTop = padT + Math.max(10, Math.round(ch * 0.08));
+  const left = padL + marginX;
+  const right = width - padR - marginX - cw;
+  const step = (right - left) / Math.max(1, n - 1);
+
+  const rx = (right - left) / 2;
+  const cx = left + rx + cw / 2;
+  const curveDepth = Math.max(Math.round(ch * 0.75), Math.round(cw * 0.55));
+
+  const minHeight = paddingTop + curveDepth + ch + labelSpace + padB + 12;
+  slotsEl.style.minHeight = `${Math.ceil(minHeight)}px`;
+
+  slots.forEach((slot, i) => {
+    const cardLeft = left + step * i;
+    const cardCenterX = cardLeft + cw / 2;
+    const dx = rx ? (cardCenterX - cx) / rx : 0;
+    const arcPower = 1.2;
+    const arcT = Math.min(1, Math.abs(dx));
+    const yTop = paddingTop + curveDepth * (1 - arcT ** arcPower);
+
+    slot.style.left = `${Math.round(cardLeft)}px`;
+    slot.style.top = `${Math.round(yTop)}px`;
+    slot.style.width = `${Math.round(cw)}px`;
+
+    // Stack cards by height: higher cards on top, lower cards behind.
+    slot.style.zIndex = String(1000 - Math.round(yTop) + i);
+  });
+};
+
+const getDealTargets = () => {
+  const deckCardEl = deckEl.querySelector('.deck-card');
+  const deckRect = (deckCardEl || deckEl).getBoundingClientRect();
+  const deckCenterX = deckRect.left + deckRect.width / 2;
+  const deckCenterY = deckRect.top + deckRect.height / 2;
+  return { deckCenterX, deckCenterY };
+};
+
+const renderSlots = () => {
+  slotsEl.innerHTML = '';
+  slotsEl.className = `slots slots--${currentSpread.layout}`;
+
+  slots = currentSpread.positions.map((position, index) => {
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.dataset.index = String(index);
+    slot.tabIndex = -1;
+    if (position.area) {
+      slot.dataset.area = position.area;
+    }
+    if (typeof position.offset === 'number') {
+      slot.style.setProperty('--offset', `${position.offset}px`);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const back = document.createElement('div');
+    back.className = 'card-face card-back';
+
+    const front = document.createElement('div');
+    front.className = 'card-face card-front';
+
+    const img = document.createElement('img');
+    img.src = '';
+    img.alt = '';
+
+    front.appendChild(img);
+    card.appendChild(back);
+    card.appendChild(front);
+
+    const title = document.createElement('div');
+    title.className = 'slot-title';
+
+    const label = document.createElement('div');
+    label.className = 'slot-label';
+    label.textContent = position.label;
+
+    slot.appendChild(card);
+    slot.appendChild(title);
+    slot.appendChild(label);
+
+    slotsEl.appendChild(slot);
+    return slot;
+  });
+};
+
+const renderReading = () => {
+  readingGridEl.innerHTML = '';
+  drawn.forEach((entry, index) => {
+    const { card, orientation, narrative, scene, detail, prediction, keywords, keywordsMode } =
+      entry;
+    const position = currentSpread.positions[index];
+    const orientationLabel = orientation === 'reversed' ? 'Reversed' : '';
+    const keywordTitle = keywordsMode === 'shadow' ? 'Keywords (Shadow)' : 'Keywords';
+    const keywordList = formatKeywordsForDisplay(keywords, keywordsMode);
+    const keywordChips = keywordList.length
+      ? keywordList.map((keyword) => `<span class="keyword-chip">${keyword}</span>`).join('')
+      : '';
+    const keywordsBlock = keywordChips
+      ? `
+        <div class="reading-keywords">
+          <p class="reading-keywords-title">${keywordTitle}</p>
+          <div class="keyword-list">${keywordChips}</div>
+        </div>
+      `
+      : '';
+    const secondaryText = scene || detail || '';
+    const isScene = Boolean(scene);
+    const secondaryLabel = isScene
+      ? orientation === 'reversed'
+        ? 'Scene (Reversed lens): '
+        : 'Scene: '
+      : '';
+    const secondaryClass =
+      isScene && orientation === 'reversed'
+        ? 'reading-paragraph reading-scene reading-scene--reversed'
+        : 'reading-paragraph reading-scene';
+    const labelSpan = secondaryLabel
+      ? `<span class="reading-scene-label">${secondaryLabel}</span>`
+      : '';
+    const sceneBlock = secondaryText ? `<p class="${secondaryClass}">${labelSpan}${secondaryText}</p>` : '';
+    const predictionText = prediction || '';
+    const item = document.createElement('div');
+    item.className = 'reading-item';
+    if (orientation === 'reversed') {
+      item.classList.add('is-reversed');
+    }
+    if (card.arcana) {
+      item.classList.add(`reading-item--${card.arcana}`);
+    }
+    item.innerHTML = `
+      <div class="reading-media">
+        <img src="${card.image}" alt="${card.name}" />
+      </div>
+      <div class="reading-body">
+        <h3>${position.label} (${card.name.toUpperCase()})</h3>
+        <p class="reading-role">${position.detail}</p>
+        ${orientationLabel ? `<p class="reading-orientation">${orientationLabel}</p>` : ''}
+        <p class="reading-section-title">General meaning</p>
+        <p class="reading-paragraph">${narrative}</p>
+        ${sceneBlock}
+        ${keywordsBlock}
+        <div class="reading-advice">
+          <h4>Personalized interpretation</h4>
+          <p>${predictionText}</p>
+        </div>
+      </div>
+    `;
+    readingGridEl.appendChild(item);
+  });
+
+  readingEl.hidden = false;
+};
+
+const resetGame = () => {
+  deck = shuffle(window.TAROT_CARDS);
+  drawn = [];
+  hasDealt = false;
+  isDealing = false;
+  slotsEl.classList.remove('is-stacked', 'is-dealing', 'is-collecting', 'is-unrevealing');
+  slotsEl.style.removeProperty('--card-width');
+  slotsEl.style.removeProperty('--card-height');
+  slotsEl.style.removeProperty('min-height');
+  tableEl?.style.removeProperty('--card-width');
+  tableEl?.style.removeProperty('--card-height');
+  slots = [];
+  slotsEl.innerHTML = '';
+  slotsEl.className = `slots slots--${currentSpread.layout}`;
+  slotsEl.hidden = true;
+  readingGridEl.innerHTML = '';
+  readingEl.hidden = true;
+  setStatus(`Tap the deck to deal ${currentSpread.positions.length} cards.`);
+  deckHintEl.textContent = `Tap the deck to deal ${currentSpread.positions.length} cards`;
+  deckEl.classList.add('ready');
+  updateRevealAllState();
+};
+
+const buildDrawnEntry = (card, positionIndex) => {
+  const position = currentSpread.positions[positionIndex];
+  const orientation = allowReversed && Math.random() < 0.3 ? 'reversed' : 'upright';
+  const interpretation = card[orientation];
+  // Use canonical meaning text for the "meaning" paragraph (position-independent).
+  // Some cards have AI-style entries in `meanings[]`; `full` stays canonical.
+  const meaningText =
+    (interpretation && typeof interpretation.full === 'string' && interpretation.full.trim()) ||
+    (Array.isArray(interpretation?.meanings) ? interpretation.meanings.join(' ') : '') ||
+    '';
+  const meaning = meaningText;
+  const reversedUsesShadow = orientation === 'reversed' && !hasNegativeCue(meaningText);
+  const keywordSource = reversedUsesShadow ? card.upright : interpretation;
+  const keywords = getKeywords(keywordSource);
+  const keywordsMode = reversedUsesShadow ? 'shadow' : orientation;
+  const narrative = reversedUsesShadow
+    ? buildReversedShadowNarrative(card, position.label, keywords)
+    : buildIntroText(card, position.label, meaningText, keywords);
+  const prediction =
+    getPersonalizedInterpretation(position.label, card.name) || sentenceize(meaningText);
+  const scene = card.scene ? card.scene.trim() : '';
+  const detail = card.detail ? card.detail.trim() : '';
+  return {
+    card,
+    orientation,
+    meaning,
+    prediction,
+    keywords,
+    narrative,
+    scene,
+    detail,
+    keywordsMode,
+  };
+};
+
+const fillSlot = (slot, entry, dealIndex) => {
+  const img = slot.querySelector('img');
+  const title = slot.querySelector('.slot-title');
+  const orientationLabel = entry.orientation === 'reversed' ? ' (Reversed)' : '';
+
+  img.src = entry.card.image;
+  img.alt = entry.card.name;
+  title.textContent = `${entry.card.name}${orientationLabel}`;
+
+  slot.classList.add('is-filled');
+  slot.classList.toggle('is-reversed', entry.orientation === 'reversed');
+  slot.classList.remove('revealed');
+  slot.style.setProperty('--deal-index', String(dealIndex));
+  slot.tabIndex = 0;
+
+  if (entry.card.arcana) {
+    slot.classList.add(`slot--${entry.card.arcana}`);
+  }
+};
+
+const startDealAnimation = () => {
+  const { deckCenterX, deckCenterY } = getDealTargets();
+  slots.forEach((slot) => {
+    const cardEl = slot.querySelector('.card');
+    if (!cardEl) return;
+    const rect = cardEl.getBoundingClientRect();
+    const cardCenterX = rect.left + rect.width / 2;
+    const cardCenterY = rect.top + rect.height / 2;
+    const dx = deckCenterX - cardCenterX;
+    const dy = deckCenterY - cardCenterY;
+    cardEl.style.setProperty('--deal-x', `${dx}px`);
+    cardEl.style.setProperty('--deal-y', `${dy}px`);
+  });
+
+  slotsEl.classList.add('is-stacked');
+  requestAnimationFrame(() => {
+    slotsEl.classList.add('is-dealing');
+    slotsEl.classList.remove('is-stacked');
+  });
+
+  const count = currentSpread.positions.length;
+  const durationMs = 650;
+  const staggerMs = 90;
+  window.setTimeout(() => {
+    slotsEl.classList.remove('is-dealing');
+    isDealing = false;
+    setStatus('Cards dealt. Tap each card to reveal (tap deck to shuffle).');
+    deckHintEl.textContent = 'Tap cards to reveal — tap deck to shuffle';
+    updateRevealAllState();
+  }, durationMs + staggerMs * Math.max(0, count - 1) + 40);
+};
+
+const dealSpread = () => {
+  if (hasDealt || isDealing) {
+    return;
+  }
+
+  isDealing = true;
+  updateRevealAllState();
+  drawn = [];
+  slotsEl.hidden = false;
+  fitCelticToViewport();
+  renderSlots();
+  layoutHorseshoe();
+
+  const count = currentSpread.positions.length;
+  for (let i = 0; i < count; i += 1) {
+    const card = deck.pop();
+    const entry = buildDrawnEntry(card, i);
+    drawn.push(entry);
+    fillSlot(slots[i], entry, i);
+  }
+
+  hasDealt = true;
+  deckEl.classList.remove('ready');
+  setStatus('Dealing...');
+  startDealAnimation();
+};
+
+const revealSlot = (slot) => {
+  if (!slot || !hasDealt || isDealing) return;
+  if (!slot.classList.contains('is-filled')) return;
+  if (slot.classList.contains('revealed')) return;
+
+  slot.classList.add('revealed');
+  const revealedCount = slots.filter((s) => s.classList.contains('revealed')).length;
+  const total = currentSpread.positions.length;
+  if (revealedCount < total) {
+    setStatus(`Revealed ${revealedCount} of ${total}. Keep going.`);
+    return;
+  }
+
+  setStatus('Reading complete. Reflect on the pattern.');
+  renderReading();
+};
+
+const shuffleAndReset = () => {
+  if (isDealing) return;
+  if (!hasDealt) {
+    resetGame();
+    return;
+  }
+
+  isDealing = true;
+  setStatus('Shuffling...');
+  deckHintEl.textContent = 'Shuffling...';
+
+  const anyRevealed = slots.some((slot) => slot.classList.contains('revealed'));
+  const unflipMs = anyRevealed ? 420 : 0;
+
+  if (anyRevealed) {
+    slotsEl.classList.add('is-unrevealing');
+    slots.forEach((slot) => slot.classList.remove('revealed'));
+    readingEl.hidden = true;
+  }
+
+  window.setTimeout(() => {
+    slotsEl.classList.remove('is-unrevealing');
+
+    // Ensure all transforms are up to date relative to the deck.
+    const { deckCenterX, deckCenterY } = getDealTargets();
+    slots.forEach((slot, index) => {
+      const cardEl = slot.querySelector('.card');
+      if (!cardEl) return;
+      const rect = cardEl.getBoundingClientRect();
+      const cardCenterX = rect.left + rect.width / 2;
+      const cardCenterY = rect.top + rect.height / 2;
+      const dx = deckCenterX - cardCenterX;
+      const dy = deckCenterY - cardCenterY;
+      cardEl.style.setProperty('--deal-x', `${dx}px`);
+      cardEl.style.setProperty('--deal-y', `${dy}px`);
+
+      // Make the return feel like a "stack": last dealt returns last.
+      const reverseIndex = Math.max(0, currentSpread.positions.length - 1 - index);
+      slot.style.setProperty('--deal-index', String(reverseIndex));
+    });
+
+    slotsEl.classList.add('is-collecting');
+
+    const count = currentSpread.positions.length;
+    const durationMs = 520;
+    const staggerMs = 55;
+    window.setTimeout(() => {
+      resetGame();
+    }, durationMs + staggerMs * Math.max(0, count - 1) + 60);
+  }, unflipMs + (anyRevealed ? 30 : 0));
+};
+
+const handleDeckActivate = () => {
+  if (isDealing) return;
+  if (!hasDealt) {
+    dealSpread();
+    return;
+  }
+  shuffleAndReset();
+};
+
+const setSpread = (spreadId) => {
+  const nextSpread = SPREADS[spreadId];
+  if (!nextSpread) {
+    return;
+  }
+  currentSpread = nextSpread;
+  if (tableEl) {
+    tableEl.dataset.spread = currentSpread.layout;
+  }
+  spreadButtons.forEach((button) => {
+    const isActive = button.dataset.spread === spreadId;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+  spreadDescEl.textContent = nextSpread.description;
+  resetGame();
+  // Defer measurement so layout is up to date (grid column widths, padding, etc).
+  requestAnimationFrame(() => {
+    primeHorseshoeCardSize();
+    fitCelticToViewport();
+  });
+};
+
+beginBtn.addEventListener('click', () => {
+  document.getElementById('game').scrollIntoView({ behavior: 'smooth' });
+  setStatus(`Tap the deck to begin your ${currentSpread.name} reading.`);
+});
+
+spreadButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    setSpread(button.dataset.spread);
+  });
+});
+
+deckEl.addEventListener('click', handleDeckActivate);
+
+deckEl.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleDeckActivate();
+  }
+});
+
+resetBtn.addEventListener('click', shuffleAndReset);
+revealAllBtn?.addEventListener('click', () => {
+  if (!hasDealt || isDealing) return;
+  revealAll();
+});
+
+setSpread('three');
+
+slotsEl.addEventListener('click', (event) => {
+  const slot = event.target.closest('.slot');
+  if (!slot) return;
+  if (currentSpread.layout === 'celtic' && slot.dataset.area === 'pos2') {
+    const centerSlot = slots.find((candidate) => candidate.dataset.area === 'pos1');
+    if (slot.classList.contains('revealed') && centerSlot && !centerSlot.classList.contains('revealed')) {
+      revealSlot(centerSlot);
+      return;
+    }
+  }
+  revealSlot(slot);
+});
+
+slotsEl.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  const slot = event.target.closest('.slot');
+  if (!slot) return;
+  event.preventDefault();
+  if (currentSpread.layout === 'celtic' && slot.dataset.area === 'pos2') {
+    const centerSlot = slots.find((candidate) => candidate.dataset.area === 'pos1');
+    if (slot.classList.contains('revealed') && centerSlot && !centerSlot.classList.contains('revealed')) {
+      revealSlot(centerSlot);
+      return;
+    }
+  }
+  revealSlot(slot);
+});
+
+window.addEventListener('resize', () => {
+  requestAnimationFrame(() => {
+    if (currentSpread.layout === 'horseshoe') {
+      primeHorseshoeCardSize();
+      if (hasDealt) layoutHorseshoe();
+    }
+    if (currentSpread.layout === 'celtic') {
+      fitCelticToViewport();
+    }
+  });
+});

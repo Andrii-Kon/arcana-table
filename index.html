@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tarot</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Tarot</p>
+        <h1>The Arcana Table</h1>
+        <p>
+          Choose a spread, tap the deck to deal the cards, then reveal each one to build the full
+          story.
+        </p>
+
+        <div class="hero-actions">
+          <button id="begin" class="primary-btn" type="button">Begin</button>
+          <button id="reset" class="secondary-btn" type="button">Shuffle</button>
+        </div>
+
+        <div class="spread-picker">
+          <p class="spread-title">Choose a spread</p>
+          <div class="spread-options">
+            <button class="spread-btn is-active" type="button" data-spread="three" aria-pressed="true">
+              Three
+            </button>
+            <button class="spread-btn" type="button" data-spread="horseshoe" aria-pressed="false">
+              Horseshoe
+            </button>
+            <button class="spread-btn" type="button" data-spread="celtic" aria-pressed="false">
+              Celtic Cross
+            </button>
+          </div>
+          <p id="spread-desc" class="spread-desc"></p>
+        </div>
+      </section>
+
+      <section id="game" class="game" aria-label="Tarot reading table">
+        <div class="table">
+          <div
+            id="deck"
+            class="deck"
+            role="button"
+            tabindex="0"
+            aria-label="Tarot deck. Tap to deal cards."
+          >
+            <div class="deck-card" aria-hidden="true"></div>
+            <span id="deck-hint"></span>
+          </div>
+          <div id="slots" class="slots" aria-label="Spread positions"></div>
+        </div>
+
+        <div class="spread-actions" aria-label="Spread actions">
+          <button id="reveal-all" class="secondary-btn" type="button" hidden>Reveal all</button>
+        </div>
+
+        <p id="status" class="status status--table" aria-live="polite"></p>
+
+        <section id="reading" class="reading" hidden>
+          <h2>Your reading</h2>
+          <div id="reading-grid" class="reading-grid"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="data/cards.js"></script>
+    <script src="data/personalized_interpretations.generated.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
