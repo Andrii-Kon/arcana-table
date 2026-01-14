@@ -1101,7 +1101,7 @@ const renderReading = () => {
         <h3>${position.label} (${card.name.toUpperCase()})</h3>
         <p class="reading-role">${position.detail}</p>
         ${orientationLabel ? `<p class="reading-orientation">${orientationLabel}</p>` : ''}
-        <p class="reading-section-title">General meaning</p>
+        <p class="reading-section-title">General Interpretation</p>
         <p class="reading-paragraph">${narrative}</p>
         ${sceneBlock}
         ${keywordsBlock}
@@ -1422,3 +1422,288 @@ window.addEventListener('resize', () => {
     }
   });
 });
+
+const viewButtons = Array.from(document.querySelectorAll('[data-view]'));
+const viewSections = new Map(
+  viewButtons
+    .map((button) => button.dataset.view)
+    .map((viewId) => [viewId, document.getElementById(viewId)])
+    .filter(([, section]) => section)
+);
+
+const setActiveView = (viewId) => {
+  viewSections.forEach((section, id) => {
+    const isActive = id === viewId;
+    section.hidden = !isActive;
+  });
+
+  viewButtons.forEach((button) => {
+    const isActive = button.dataset.view === viewId;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+};
+
+const syncViewFromHash = () => {
+  const hashView = window.location.hash.replace('#', '');
+  if (viewSections.has(hashView)) {
+    setActiveView(hashView);
+    return;
+  }
+  setActiveView(viewSections.has('tarot') ? 'tarot' : viewSections.keys().next().value);
+};
+
+if (viewButtons.length > 0) {
+  viewButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const viewId = button.dataset.view;
+      setActiveView(viewId);
+      if (viewId) {
+        history.replaceState(null, '', `#${viewId}`);
+      }
+    });
+  });
+
+  window.addEventListener('hashchange', syncViewFromHash);
+  syncViewFromHash();
+}
+
+const setBodyModalState = () => {
+  const hasOpenModal = document.querySelector('.modal:not([hidden])');
+  document.body.classList.toggle('modal-open', Boolean(hasOpenModal));
+};
+
+const openModal = (modal) => {
+  if (!modal) return;
+  modal.hidden = false;
+  setBodyModalState();
+};
+
+const closeModal = (modal) => {
+  if (!modal) return;
+  modal.hidden = true;
+  setBodyModalState();
+};
+
+const getLocalDateKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const hashString = (value) => {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash);
+};
+
+const pickFromList = (list, seed) => {
+  if (!Array.isArray(list) || list.length === 0) return '';
+  return list[seed % list.length];
+};
+
+const getDailyInterpretation = (card, variant, seed) => {
+  const presentText = getPersonalizedInterpretation('Present', card.name);
+  if (presentText) return sentenceize(presentText);
+
+  const personalizedList = variant.personalized_interpretation;
+  if (Array.isArray(personalizedList) && personalizedList.length > 0) {
+    return sentenceize(pickFromList(personalizedList, seed));
+  }
+
+  if (variant.full) return sentenceize(variant.full);
+
+  const meaning = pickFromList(variant.meanings, seed) || card.detail;
+  return sentenceize(meaning);
+};
+
+const getDailyCardData = () => {
+  const cards = window.TAROT_CARDS || [];
+  if (!Array.isArray(cards) || cards.length === 0) return null;
+  const dateKey = getLocalDateKey();
+  const baseSeed = hashString(dateKey);
+  const card = cards[baseSeed % cards.length];
+  const orientationSeed = hashString(`${dateKey}:orientation`);
+  const isReversed = orientationSeed % 5 === 0;
+  const orientation = isReversed ? 'reversed' : 'upright';
+  const variant = card[orientation] || card.upright || {};
+  const keywordText =
+    (variant.keywordsList && variant.keywordsList.join(', ')) || variant.keywords || '';
+  const message = pickFromList(variant.meanings, baseSeed) || card.detail || '';
+  const guidance =
+    pickFromList(variant.advice, orientationSeed) ||
+    pickFromList(card.upright?.advice, baseSeed) ||
+    'Choose one grounded action that honors your focus.';
+  const interpretation = getDailyInterpretation(card, variant, baseSeed);
+
+  return {
+    dateKey,
+    card,
+    orientation,
+    keywordText,
+    message,
+    guidance,
+    interpretation,
+  };
+};
+
+const dailyModal = document.getElementById('dailyCardModal');
+const dailyTrigger = document.getElementById('dailyCardTrigger');
+
+const dailyCardDate = document.getElementById('dailyCardDate');
+const dailyCardImage = document.getElementById('dailyCardImage');
+const dailyCardMedia = document.getElementById('dailyCardMedia');
+const dailyCardName = document.getElementById('dailyCardName');
+const dailyCardArcana = document.getElementById('dailyCardArcana');
+const dailyCardKeywords = document.getElementById('dailyCardKeywords');
+const dailyCardMessage = document.getElementById('dailyCardMessage');
+const dailyCardGuidance = document.getElementById('dailyCardGuidance');
+const dailyCardInterpretation = document.getElementById('dailyCardInterpretation');
+const dailyCardInterpretationLabel = document.getElementById('dailyCardInterpretationLabel');
+
+const setDailyCardContent = () => {
+  const data = getDailyCardData();
+  if (!data) return;
+
+  const now = new Date();
+  const dateLabel = now.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  if (dailyCardDate) dailyCardDate.textContent = dateLabel;
+  if (dailyCardName) {
+    dailyCardName.textContent = `${data.card.name}${data.orientation === 'reversed' ? ' (Reversed)' : ''}`;
+  }
+  if (dailyCardArcana) {
+    dailyCardArcana.textContent = data.card.arcana === 'major' ? 'Major Arcana' : 'Minor Arcana';
+  }
+  if (dailyCardKeywords) {
+    dailyCardKeywords.textContent = data.keywordText || 'A quiet focus for today.';
+  }
+  if (dailyCardMessage) {
+    dailyCardMessage.textContent = data.message || 'Let today be a gentle reset.';
+  }
+  if (dailyCardGuidance) {
+    dailyCardGuidance.textContent = data.guidance;
+  }
+  if (dailyCardInterpretation) {
+    dailyCardInterpretation.textContent = data.interpretation;
+  }
+  if (dailyCardInterpretationLabel) {
+    dailyCardInterpretationLabel.textContent = 'Personalized interpretation';
+  }
+  if (dailyCardImage) {
+    const mediaFigure = dailyCardImage.closest('figure');
+    if (data.card.image) {
+      dailyCardImage.src = data.card.image;
+      dailyCardImage.alt = data.card.name;
+      if (mediaFigure) mediaFigure.hidden = false;
+    } else if (mediaFigure) {
+      mediaFigure.hidden = true;
+    }
+  }
+  if (dailyCardMedia) {
+    dailyCardMedia.classList.remove('daily-card__media--major', 'daily-card__media--minor');
+    dailyCardMedia.classList.add(
+      data.card.arcana === 'major' ? 'daily-card__media--major' : 'daily-card__media--minor'
+    );
+  }
+};
+
+const openDailyModal = () => {
+  if (!dailyModal) return;
+  setDailyCardContent();
+  openModal(dailyModal);
+};
+
+const closeDailyModal = () => {
+  if (!dailyModal) return;
+  closeModal(dailyModal);
+};
+
+if (dailyModal) {
+  const closeTargets = dailyModal.querySelectorAll('[data-daily-close]');
+  closeTargets.forEach((target) => {
+    target.addEventListener('click', closeDailyModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !dailyModal.hidden) {
+      closeDailyModal();
+    }
+  });
+}
+
+const DAILY_SEEN_KEY = 'dailyCardSeen';
+
+const markDailySeen = () => {
+  try {
+    localStorage.setItem(DAILY_SEEN_KEY, '1');
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const hasSeenDaily = () => {
+  try {
+    return localStorage.getItem(DAILY_SEEN_KEY) === '1';
+  } catch (error) {
+    return false;
+  }
+};
+
+if (dailyTrigger) {
+  if (!hasSeenDaily()) {
+    dailyTrigger.classList.add('daily-trigger--attention');
+  }
+
+  dailyTrigger.addEventListener('click', () => {
+    markDailySeen();
+    dailyTrigger.classList.remove('daily-trigger--attention');
+    openDailyModal();
+  });
+}
+
+const preludeModal = document.getElementById('preludeModal');
+
+const openPreludeModal = () => {
+  openModal(preludeModal);
+};
+
+const closePreludeModal = () => {
+  closeModal(preludeModal);
+};
+
+if (preludeModal) {
+  const closeTargets = preludeModal.querySelectorAll('[data-modal-close]');
+  closeTargets.forEach((target) => {
+    target.addEventListener('click', closePreludeModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !preludeModal.hidden) {
+      closePreludeModal();
+    }
+  });
+
+  const beginButton = document.getElementById('begin');
+  if (beginButton) {
+    beginButton.addEventListener('click', () => {
+      if (!preludeModal.hidden) {
+        closePreludeModal();
+      }
+    });
+  }
+
+  const hashView = window.location.hash.replace('#', '');
+  if (!hashView || hashView === 'tarot') {
+    openPreludeModal();
+  }
+}

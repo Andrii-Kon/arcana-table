@@ -1,0 +1,800 @@
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Система вкладок */
+.tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 0 40px;
+    margin-top: 0;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.tab-button:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.tab-button.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75em;
+}
+
+.site-link {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.site-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.site-link.is-active {
+    color: #fff;
+}
+
+.site-separator {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Заголовок */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+/* Форма */
+.input-section {
+    padding: 40px;
+    background: #f8f9fa;
+}
+
+.input-section h2 {
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Загрузка */
+.loading {
+    text-align: center;
+    padding: 60px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Результаты */
+.results {
+    padding: 40px;
+}
+
+.results h2 {
+    margin-bottom: 30px;
+    color: #333;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 10px;
+}
+
+/* Основные числа */
+.numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.number-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.number-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.number-card.master {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.number-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.number-header h3 {
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.number-value {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.number-card.master .number-value {
+    color: white;
+}
+
+.number-name {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.number-card.master .number-name {
+    color: white;
+}
+
+.number-description {
+    font-size: 0.95em;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.number-card.master .number-description {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.number-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.keyword {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    color: #667eea;
+}
+
+.number-card.master .keyword {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Персональные циклы */
+.personal-cycles {
+    margin-bottom: 40px;
+}
+
+.cycles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.cycle-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.cycle-card:hover {
+    border-color: #667eea;
+}
+
+.cycle-card h3 {
+    font-size: 1em;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.cycle-number {
+    display: block;
+    font-size: 3em;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.cycle-description {
+    font-size: 0.9em;
+    color: #888;
+}
+
+/* Пики и вызовы */
+.pinnacles-section,
+.challenges-section {
+    margin-bottom: 40px;
+}
+
+.pinnacles-grid,
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.pinnacle-card,
+.challenge-card {
+    background: white;
+    border-left: 4px solid #667eea;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.challenge-card {
+    border-left-color: #f5576c;
+}
+
+.pinnacle-card h4,
+.challenge-card h4 {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.pinnacle-card .number,
+.challenge-card .number {
+    font-size: 2em;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.challenge-card .number {
+    color: #f5576c;
+}
+
+.pinnacle-card .age,
+.challenge-card .age {
+    font-size: 0.9em;
+    color: #888;
+    margin-bottom: 10px;
+}
+
+.pinnacle-card .description,
+.challenge-card .description {
+    font-size: 0.95em;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Ошибка */
+.error {
+    background: #fee;
+    border: 2px solid #fcc;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 40px;
+    color: #c33;
+    text-align: center;
+}
+
+/* Формулы расчета */
+.formula-details {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.formula-details summary {
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #667eea;
+    font-weight: 600;
+    user-select: none;
+    padding: 5px 0;
+}
+
+.formula-details summary:hover {
+    color: #764ba2;
+}
+
+.formula-content {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.formula-description {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.formula-steps {
+    margin: 0;
+    padding-left: 20px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.formula-steps li {
+    margin-bottom: 5px;
+}
+
+.number-card.master .formula-content {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.number-card.master .formula-description,
+.number-card.master .formula-steps {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.cycle-card .formula-details {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.cycle-card .formula-content {
+    margin-top: 8px;
+    font-size: 0.85em;
+}
+
+/* Раздел совместимости */
+.compatibility-section {
+    padding: 40px;
+    background: #f8f9fa;
+    margin-top: 0;
+}
+
+.compatibility-section h2 {
+    margin-bottom: 10px;
+    color: #333;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.section-description {
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 1em;
+}
+
+.two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 25px;
+}
+
+.person-column {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.person-column h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+    font-size: 1.2em;
+}
+
+/* Результаты совместимости */
+.compatibility-results {
+    margin-top: 40px;
+}
+
+.compatibility-score {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.compatibility-score h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5em;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.score-circle.excellent {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.score-circle.good {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.score-circle.moderate {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.score-circle.challenging {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.score-value {
+    font-size: 3em;
+    line-height: 1;
+}
+
+.score-percent {
+    font-size: 0.5em;
+    opacity: 0.9;
+}
+
+.score-description {
+    font-size: 1.1em;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Детали совместимости */
+.compatibility-details {
+    margin-bottom: 40px;
+}
+
+.compatibility-details h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.compatibility-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.compatibility-item {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+    transition: transform 0.3s;
+}
+
+.compatibility-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.compatibility-item.excellent {
+    border-left-color: #38ef7d;
+}
+
+.compatibility-item.good {
+    border-left-color: #667eea;
+}
+
+.compatibility-item.moderate {
+    border-left-color: #f5576c;
+}
+
+.compatibility-item.challenging {
+    border-left-color: #fee140;
+}
+
+.compatibility-item h4 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.weight-badge {
+    font-size: 0.7em;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.compatibility-explanation {
+    background: rgba(102, 126, 234, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: #555;
+    font-size: 0.95em;
+    line-height: 1.6;
+    border-left: 4px solid #667eea;
+}
+
+.formula-example {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+    font-family: monospace;
+    color: #333;
+    font-weight: 600;
+}
+
+.comp-numbers {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.comp-score {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.comp-desc {
+    font-size: 0.95em;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Групповое число */
+.compatibility-group {
+    text-align: center;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
+}
+
+.compatibility-group h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.group-number {
+    font-size: 4em;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.group-description {
+    color: #666;
+    font-size: 0.95em;
+}
+
+/* Рекомендации */
+.compatibility-recommendations {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.compatibility-recommendations h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.compatibility-recommendations ul {
+    list-style: none;
+    padding: 0;
+}
+
+.compatibility-recommendations li {
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    border-radius: 6px;
+    color: #555;
+    line-height: 1.6;
+}
+
+.compatibility-recommendations li:before {
+    content: "💡 ";
+    margin-right: 8px;
+}
+
+/* Адаптивность для совместимости */
+@media (max-width: 768px) {
+    .two-columns {
+        grid-template-columns: 1fr;
+    }
+    
+    .compatibility-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .score-circle {
+        width: 120px;
+        height: 120px;
+        font-size: 2em;
+    }
+    
+    .score-value {
+        font-size: 2.5em;
+    }
+}
+
+/* Утилиты */
+.hidden {
+    display: none !important;
+}
+
+/* Футер */
+footer {
+    background: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2em;
+    }
+
+    .numbers-grid,
+    .cycles-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .input-section,
+    .results {
+        padding: 20px;
+    }
+}

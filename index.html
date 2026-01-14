@@ -8,66 +8,1044 @@
   </head>
   <body>
     <main class="page">
-      <section class="hero">
-        <p class="eyebrow">Tarot</p>
-        <h1>The Arcana Table</h1>
-        <p>
-          Choose a spread, tap the deck to deal the cards, then reveal each one to build the full
-          story.
-        </p>
+      <header class="topbar">
+        <button
+          id="dailyCardTrigger"
+          class="daily-trigger"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="dailyCardModal"
+        >
+          <span class="daily-trigger__title">Daily card</span>
+          <span class="daily-trigger__subtitle">Click to reveal</span>
+        </button>
 
-        <div class="hero-actions">
-          <button id="begin" class="primary-btn" type="button">Begin</button>
-          <button id="reset" class="secondary-btn" type="button">Shuffle</button>
-        </div>
+        <nav class="site-nav" aria-label="Site">
+          <button class="site-link is-active" type="button" data-view="tarot" aria-pressed="true">
+            Tarot
+          </button>
+          <button class="site-link" type="button" data-view="numerology" aria-pressed="false">
+            Numerology
+          </button>
+          <button class="site-link" type="button" data-view="palmistry" aria-pressed="false">
+            Palmistry
+          </button>
+        </nav>
+      </header>
 
-        <div class="spread-picker">
-          <p class="spread-title">Choose a spread</p>
-          <div class="spread-options">
-            <button class="spread-btn is-active" type="button" data-spread="three" aria-pressed="true">
-              Three
-            </button>
-            <button class="spread-btn" type="button" data-spread="horseshoe" aria-pressed="false">
-              Horseshoe
-            </button>
-            <button class="spread-btn" type="button" data-spread="celtic" aria-pressed="false">
-              Celtic Cross
-            </button>
+      <div id="tarot" class="view view--tarot" aria-label="Tarot reading">
+        <section class="hero">
+          <h1>The Arcana Table</h1>
+          <p>
+            Choose a spread, tap the deck to deal the cards, then reveal each one to build the full
+            story.
+          </p>
+
+          <div class="hero-actions">
+            <button id="begin" class="primary-btn" type="button">Begin</button>
+            <button id="reset" class="secondary-btn" type="button">Shuffle</button>
           </div>
-          <p id="spread-desc" class="spread-desc"></p>
-        </div>
-      </section>
 
-      <section id="game" class="game" aria-label="Tarot reading table">
-        <div class="table">
-          <div
-            id="deck"
-            class="deck"
-            role="button"
-            tabindex="0"
-            aria-label="Tarot deck. Tap to deal cards."
-          >
-            <div class="deck-card" aria-hidden="true"></div>
-            <span id="deck-hint"></span>
+          <div class="spread-picker">
+            <p class="spread-title">Choose a spread</p>
+            <div class="spread-options">
+              <button class="spread-btn is-active" type="button" data-spread="three" aria-pressed="true">
+                Three
+              </button>
+              <button class="spread-btn" type="button" data-spread="horseshoe" aria-pressed="false">
+                Horseshoe
+              </button>
+              <button class="spread-btn" type="button" data-spread="celtic" aria-pressed="false">
+                Celtic Cross
+              </button>
+            </div>
+            <p id="spread-desc" class="spread-desc"></p>
           </div>
-          <div id="slots" class="slots" aria-label="Spread positions"></div>
-        </div>
-
-        <div class="spread-actions" aria-label="Spread actions">
-          <button id="reveal-all" class="secondary-btn" type="button" hidden>Reveal all</button>
-        </div>
-
-        <p id="status" class="status status--table" aria-live="polite"></p>
-
-        <section id="reading" class="reading" hidden>
-          <h2>Your reading</h2>
-          <div id="reading-grid" class="reading-grid"></div>
         </section>
-      </section>
+
+        <section id="game" class="game" aria-label="Tarot reading table">
+          <div class="table">
+            <div
+              id="deck"
+              class="deck"
+              role="button"
+              tabindex="0"
+              aria-label="Tarot deck. Tap to deal cards."
+            >
+              <div class="deck-card" aria-hidden="true"></div>
+              <span id="deck-hint"></span>
+            </div>
+            <div id="slots" class="slots" aria-label="Spread positions"></div>
+          </div>
+
+          <div class="spread-actions" aria-label="Spread actions">
+            <button id="reveal-all" class="secondary-btn" type="button" hidden>Reveal all</button>
+          </div>
+
+          <p id="status" class="status status--table" aria-live="polite"></p>
+
+          <section id="reading" class="reading" hidden>
+            <h2>Your reading</h2>
+            <div id="reading-grid" class="reading-grid"></div>
+          </section>
+        </section>
+      </div>
+
+      <div id="numerology" class="view view--numerology numerology" aria-label="Numerology map" hidden>
+        <div class="container">
+          <header>
+            <h1>Numerology Map</h1>
+            <p class="subtitle">A quick, story-rich look at your core numbers and current cycles.</p>
+          </header>
+
+          <div class="numerology-main">
+            <div class="tabs">
+              <button class="tab-button active" data-tab="profile">My Numbers</button>
+              <button class="tab-button" data-tab="compatibility">Connection</button>
+            </div>
+
+            <div id="profileTab" class="tab-content active">
+              <section class="input-section">
+                <h2>Tell us about you</h2>
+                <form id="numerologyForm">
+                  <div class="form-group">
+                    <label for="fullName">Full name:</label>
+                    <input
+                      type="text"
+                      id="fullName"
+                      name="fullName"
+                      placeholder="For example: John Smith"
+                      required
+                    />
+                    <small>Use the name you use most, or the one on your documents.</small>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="birthDate">Date of birth:</label>
+                    <input type="date" id="birthDate" name="birthDate" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="currentDate">Current date (optional):</label>
+                    <input type="date" id="currentDate" name="currentDate" />
+                    <small>Leave blank to use today.</small>
+                  </div>
+
+                  <button type="submit" class="btn-primary">Reveal my numbers</button>
+                </form>
+              </section>
+
+              <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Tuning your numbers...</p>
+              </div>
+
+              <div id="results" class="results hidden">
+                <section class="main-numbers">
+                  <h2>Core signature</h2>
+                  <div class="numbers-grid">
+                    <div class="number-card" id="lifePathCard">
+                      <div class="number-header">
+                        <h3>Life Path</h3>
+                        <span class="number-value" id="lifePathNumber">-</span>
+                      </div>
+                      <div class="number-content">
+                        <p class="number-name" id="lifePathName">-</p>
+                        <p class="number-description" id="lifePathDescription">-</p>
+                        <div class="number-keywords" id="lifePathKeywords"></div>
+                        <details class="formula-details">
+                          <summary>Show the math</summary>
+                          <div class="formula-content" id="lifePathFormula"></div>
+                        </details>
+                      </div>
+                    </div>
+
+                    <div class="number-card" id="destinyCard">
+                      <div class="number-header">
+                        <h3>Destiny</h3>
+                        <span class="number-value" id="destinyNumber">-</span>
+                      </div>
+                      <div class="number-content">
+                        <p class="number-name" id="destinyName">-</p>
+                        <p class="number-description" id="destinyDescription">-</p>
+                        <div class="number-keywords" id="destinyKeywords"></div>
+                        <details class="formula-details">
+                          <summary>Show the math</summary>
+                          <div class="formula-content" id="destinyFormula"></div>
+                        </details>
+                      </div>
+                    </div>
+
+                    <div class="number-card" id="soulCard">
+                      <div class="number-header">
+                        <h3>Soul</h3>
+                        <span class="number-value" id="soulNumber">-</span>
+                      </div>
+                      <div class="number-content">
+                        <p class="number-name" id="soulName">-</p>
+                        <p class="number-description" id="soulDescription">-</p>
+                        <div class="number-keywords" id="soulKeywords"></div>
+                        <details class="formula-details">
+                          <summary>Show the math</summary>
+                          <div class="formula-content" id="soulFormula"></div>
+                        </details>
+                      </div>
+                    </div>
+
+                    <div class="number-card" id="personalityCard">
+                      <div class="number-header">
+                        <h3>Personality</h3>
+                        <span class="number-value" id="personalityNumber">-</span>
+                      </div>
+                      <div class="number-content">
+                        <p class="number-name" id="personalityName">-</p>
+                        <p class="number-description" id="personalityDescription">-</p>
+                        <div class="number-keywords" id="personalityKeywords"></div>
+                        <details class="formula-details">
+                          <summary>Show the math</summary>
+                          <div class="formula-content" id="personalityFormula"></div>
+                        </details>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="personal-cycles">
+                  <h2>Current cycles</h2>
+                  <div class="cycles-grid">
+                    <div class="cycle-card">
+                      <h3>Personal year</h3>
+                      <span class="cycle-number" id="personalYearNumber">-</span>
+                      <p class="cycle-description" id="personalYearDescription">-</p>
+                      <details class="formula-details">
+                        <summary>Show the math</summary>
+                        <div class="formula-content" id="personalYearFormula"></div>
+                      </details>
+                    </div>
+                    <div class="cycle-card">
+                      <h3>Personal month</h3>
+                      <span class="cycle-number" id="personalMonthNumber">-</span>
+                      <p class="cycle-description" id="personalMonthDescription">-</p>
+                      <details class="formula-details">
+                        <summary>Show the math</summary>
+                        <div class="formula-content" id="personalMonthFormula"></div>
+                      </details>
+                    </div>
+                    <div class="cycle-card">
+                      <h3>Personal day</h3>
+                      <span class="cycle-number" id="personalDayNumber">-</span>
+                      <p class="cycle-description" id="personalDayDescription">-</p>
+                      <details class="formula-details">
+                        <summary>Show the math</summary>
+                        <div class="formula-content" id="personalDayFormula"></div>
+                      </details>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="pinnacles-section">
+                  <h2>Life peaks</h2>
+                  <div class="pinnacles-grid" id="pinnaclesGrid"></div>
+                </section>
+
+                <section class="challenges-section">
+                  <h2>Life lessons</h2>
+                  <div class="challenges-grid" id="challengesGrid"></div>
+                </section>
+              </div>
+
+              <div id="error" class="error hidden">
+                <p id="errorMessage"></p>
+              </div>
+            </div>
+
+            <div id="compatibilityTab" class="tab-content">
+              <section class="compatibility-section">
+                <h2>Connection</h2>
+                <p class="section-description">See how two charts interact and where the energy flows.</p>
+
+                <form id="compatibilityForm">
+                  <div class="two-columns">
+                    <div class="person-column">
+                      <h3>Person A</h3>
+                      <div class="form-group">
+                        <label for="person1Name">Full name:</label>
+                        <input
+                          type="text"
+                          id="person1Name"
+                          name="person1Name"
+                          placeholder="For example: John Smith"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="person1BirthDate">Birth date:</label>
+                        <input type="date" id="person1BirthDate" name="person1BirthDate" required />
+                      </div>
+                    </div>
+
+                    <div class="person-column">
+                      <h3>Person B</h3>
+                      <div class="form-group">
+                        <label for="person2Name">Full name:</label>
+                        <input
+                          type="text"
+                          id="person2Name"
+                          name="person2Name"
+                          placeholder="For example: Emily Carter"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="person2BirthDate">Birth date:</label>
+                        <input type="date" id="person2BirthDate" name="person2BirthDate" required />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn-primary">Check compatibility</button>
+                </form>
+
+                <div id="compatibilityResults" class="compatibility-results hidden">
+                  <div class="compatibility-score">
+                    <h3>Overall match</h3>
+                    <div class="score-circle" id="compatibilityScoreCircle">
+                      <span class="score-value" id="compatibilityScore">0</span>
+                      <span class="score-percent">%</span>
+                    </div>
+                    <p class="score-description" id="compatibilityDescription"></p>
+                    <details class="formula-details">
+                      <summary>How to read this score?</summary>
+                      <div class="formula-content">
+                        <p class="formula-description">
+                          <strong>Compatibility scale:</strong>
+                        </p>
+                        <ul class="formula-steps">
+                          <li><strong>85-100% (Aligned):</strong> Strong flow and natural support</li>
+                          <li><strong>70-84% (Supportive):</strong> Stable base with room to grow</li>
+                          <li><strong>60-69% (Mixed):</strong> Needs attention and clear communication</li>
+                          <li><strong>Below 60% (Growth edge):</strong> Requires intention and care</li>
+                        </ul>
+                        <p class="formula-description" style="margin-top: 15px;">
+                          <strong>Important:</strong> A low score is not a verdict. It points to the places that need care.
+                        </p>
+                      </div>
+                    </details>
+                  </div>
+
+                  <div class="compatibility-details">
+                    <h3>Number by number</h3>
+                    <p class="compatibility-explanation">
+                      We weight Life Path (40%), Destiny (30%), Soul (20%), and Personality (10%) to build the overall score.
+                    </p>
+                    <div class="compatibility-grid">
+                      <div class="compatibility-item" id="lifePathComp">
+                        <h4>Life Path <span class="weight-badge">40%</span></h4>
+                        <div class="comp-numbers" id="lifePathNumbers">-</div>
+                        <div class="comp-score" id="lifePathScore">-</div>
+                        <p class="comp-desc" id="lifePathDesc">-</p>
+                        <details class="formula-details">
+                          <summary>Why it matters</summary>
+                          <div class="formula-content">
+                            <p class="formula-description">
+                              <strong>Life Path</strong> shows the long arc: direction, timing, and core life rhythm.
+                            </p>
+                            <p>Shows:</p>
+                            <ul class="formula-steps">
+                              <li>Alignment of long-term goals</li>
+                              <li>How you move through change</li>
+                              <li>Potential for staying power</li>
+                            </ul>
+                          </div>
+                        </details>
+                      </div>
+                      <div class="compatibility-item" id="destinyComp">
+                        <h4>Destiny <span class="weight-badge">30%</span></h4>
+                        <div class="comp-numbers" id="destinyNumbers">-</div>
+                        <div class="comp-score" id="destinyScore">-</div>
+                        <p class="comp-desc" id="destinyDesc">-</p>
+                        <details class="formula-details">
+                          <summary>Why it matters</summary>
+                          <div class="formula-content">
+                            <p class="formula-description">
+                              <strong>Destiny</strong> reflects goals and how you build in the world.
+                            </p>
+                            <p>Shows:</p>
+                            <ul class="formula-steps">
+                              <li>Shared ambitions and focus</li>
+                              <li>How you collaborate on plans</li>
+                              <li>Whether strengths stack or clash</li>
+                            </ul>
+                          </div>
+                        </details>
+                      </div>
+                      <div class="compatibility-item" id="soulComp">
+                        <h4>Soul <span class="weight-badge">20%</span></h4>
+                        <div class="comp-numbers" id="soulNumbers">-</div>
+                        <div class="comp-score" id="soulScore">-</div>
+                        <p class="comp-desc" id="soulDesc">-</p>
+                        <details class="formula-details">
+                          <summary>Why it matters</summary>
+                          <div class="formula-content">
+                            <p class="formula-description">
+                              <strong>Soul</strong> speaks to emotional tone and inner needs.
+                            </p>
+                            <p>Shows:</p>
+                            <ul class="formula-steps">
+                              <li>Emotional resonance</li>
+                              <li>How you recharge together</li>
+                              <li>Alignment of inner values</li>
+                            </ul>
+                          </div>
+                        </details>
+                      </div>
+                      <div class="compatibility-item" id="personalityComp">
+                        <h4>Personality <span class="weight-badge">10%</span></h4>
+                        <div class="comp-numbers" id="personalityNumbers">-</div>
+                        <div class="comp-score" id="personalityScore">-</div>
+                        <p class="comp-desc" id="personalityDesc">-</p>
+                        <details class="formula-details">
+                          <summary>Why it matters</summary>
+                          <div class="formula-content">
+                            <p class="formula-description">
+                              <strong>Personality</strong> is the social layer: first impressions and outward style.
+                            </p>
+                            <p>Shows:</p>
+                            <ul class="formula-steps">
+                              <li>Social ease and chemistry</li>
+                              <li>How you present as a pair</li>
+                              <li>Public-facing harmony</li>
+                            </ul>
+                          </div>
+                        </details>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="compatibility-group">
+                    <h3>Pair signature</h3>
+                    <div class="group-number" id="pairNumber">-</div>
+                    <p class="group-description">The shared tone created by your combined life paths.</p>
+                    <details class="formula-details">
+                      <summary>How is it calculated?</summary>
+                      <div class="formula-content">
+                        <p class="formula-description">
+                          <strong>Formula:</strong> Person A Life Path + Person B Life Path -> reduction
+                        </p>
+                        <p>This number highlights:</p>
+                        <ul class="formula-steps">
+                          <li>The energy you create together</li>
+                          <li>The style of the bond</li>
+                          <li>Collective potential</li>
+                        </ul>
+                        <p class="formula-example" id="pairNumberFormula"></p>
+                      </div>
+                    </details>
+                  </div>
+
+                  <div class="compatibility-recommendations">
+                    <h3>Suggested focus</h3>
+                    <ul id="recommendationsList"></ul>
+                  </div>
+                </div>
+
+                <div id="compatibilityLoading" class="loading hidden">
+                  <div class="spinner"></div>
+                  <p>Reading your connection...</p>
+                </div>
+
+                <div id="compatibilityError" class="error hidden">
+                  <p id="compatibilityErrorMessage"></p>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <footer>
+            <p>Inspired by the Jean Simpson numerology system.</p>
+          </footer>
+        </div>
+      </div>
+
+      <div id="palmistry" class="view view--palmistry palmistry" aria-label="Palmistry quiz" hidden>
+        <div class="container">
+          <header>
+            <h1>Palmistry Reading</h1>
+            <p class="subtitle">Based on Cheiro's Palmistry for All. Study your hand and answer the quiz.</p>
+          </header>
+
+          <div class="palmistry-main">
+            <section class="palmistry-intro">
+              <div class="intro-card">
+                <h2>How to read your hand</h2>
+                <p>Use your dominant hand. Compare shape, lines, and mounts, then choose the closest option.</p>
+                <ul>
+                  <li>Look at your palm shape and finger tips first.</li>
+                  <li>Trace the major lines with a soft light.</li>
+                  <li>Pick the strongest mounts if two feel prominent.</li>
+                </ul>
+              </div>
+            </section>
+
+            <form id="palmistryForm" class="palmistry-form" novalidate>
+              <section class="quiz-section">
+                <h2>Hand shape</h2>
+                <fieldset class="quiz-card">
+                  <legend>Which hand type matches you best?</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="elementary" required />
+                      <span class="option-content">
+                        <span class="option-title">Elementary</span>
+                        <span class="option-desc">Short, thick palm with heavy fingers.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="square" />
+                      <span class="option-content">
+                        <span class="option-title">Square (Practical)</span>
+                        <span class="option-desc">Square palm, straight edges, solid build.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="spatulate" />
+                      <span class="option-content">
+                        <span class="option-title">Spatulate (Active)</span>
+                        <span class="option-desc">Widened finger tips, energetic look.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="philosophic" />
+                      <span class="option-content">
+                        <span class="option-title">Philosophic</span>
+                        <span class="option-desc">Long, bony palm with knotty joints.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="conic" />
+                      <span class="option-content">
+                        <span class="option-title">Conic (Artistic)</span>
+                        <span class="option-desc">Tapered fingers, soft and graceful.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="psychic" />
+                      <span class="option-content">
+                        <span class="option-title">Psychic (Idealistic)</span>
+                        <span class="option-desc">Very fine, delicate, refined lines.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="handType" value="mixed" />
+                      <span class="option-content">
+                        <span class="option-title">Mixed</span>
+                        <span class="option-desc">Different shapes across fingers and palm.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+              </section>
+
+              <section class="quiz-section">
+                <h2>Major lines</h2>
+                <figure class="illustration-card illustration-card--inline">
+                  <img
+                    src="palmistry_static/images/palmistry-major-lines.webp"
+                    alt="Palm diagram labeling the five major lines: heart, head, life, fate, and sun."
+                    loading="lazy"
+                  />
+                  <figcaption>Major lines: Heart, Head, Life, Fate, Sun.</figcaption>
+                </figure>
+                <fieldset class="quiz-card">
+                  <legend>Head line (mentality)</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="headLine" value="straight" required />
+                      <span class="option-content">
+                        <span class="option-title">Straight across</span>
+                        <span class="option-desc">Clear, steady line across the palm.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="headLine" value="sloping" />
+                      <span class="option-content">
+                        <span class="option-title">Slopes downward</span>
+                        <span class="option-desc">Drops toward the Moon side of the palm.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="headLine" value="chained" />
+                      <span class="option-content">
+                        <span class="option-title">Chained or broken</span>
+                        <span class="option-desc">Looks linked, fragmented, or uneven.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Heart line (emotions)</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="heartLine" value="jupiter" required />
+                      <span class="option-content">
+                        <span class="option-title">Ends under index finger</span>
+                        <span class="option-desc">Rises toward the Jupiter mount.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="heartLine" value="between" />
+                      <span class="option-content">
+                        <span class="option-title">Ends between index and middle</span>
+                        <span class="option-desc">Balanced finish between two fingers.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="heartLine" value="saturn" />
+                      <span class="option-content">
+                        <span class="option-title">Ends under middle finger</span>
+                        <span class="option-desc">Finishes closer to Saturn mount.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="heartLine" value="chained" />
+                      <span class="option-content">
+                        <span class="option-title">Chained or fragmented</span>
+                        <span class="option-desc">Looks linked, dotted, or uneven.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Life line (vitality)</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="lifeLine" value="strong" required />
+                      <span class="option-content">
+                        <span class="option-title">Long and deep</span>
+                        <span class="option-desc">Clear curve around the thumb.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="lifeLine" value="faint" />
+                      <span class="option-content">
+                        <span class="option-title">Faint or shallow</span>
+                        <span class="option-desc">Light line, thin or narrow.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="lifeLine" value="broken" />
+                      <span class="option-content">
+                        <span class="option-title">Broken or islanded</span>
+                        <span class="option-desc">Gaps, islands, or interruptions.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="lifeLine" value="mars" />
+                      <span class="option-content">
+                        <span class="option-title">Double line (Mars line)</span>
+                        <span class="option-desc">A parallel support line beside it.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Fate line (career path)</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="fateLine" value="clear" required />
+                      <span class="option-content">
+                        <span class="option-title">Clear and steady</span>
+                        <span class="option-desc">Runs upward through the center.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="fateLine" value="broken" />
+                      <span class="option-content">
+                        <span class="option-title">Faint or broken</span>
+                        <span class="option-desc">Changes, gaps, or multiple starts.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="fateLine" value="absent" />
+                      <span class="option-content">
+                        <span class="option-title">Absent or very light</span>
+                        <span class="option-desc">No strong central career line.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Sun line (recognition)</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="sunLine" value="clear" required />
+                      <span class="option-content">
+                        <span class="option-title">Clear or rising</span>
+                        <span class="option-desc">Visible line under the ring finger.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="sunLine" value="absent" />
+                      <span class="option-content">
+                        <span class="option-title">Faint or absent</span>
+                        <span class="option-desc">No strong line under the ring finger.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+              </section>
+
+              <section class="quiz-section">
+                <h2>Details and structure</h2>
+                <fieldset class="quiz-card">
+                  <legend>Thumb flexibility</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="thumbFlex" value="supple" required />
+                      <span class="option-content">
+                        <span class="option-title">Supple and bends back</span>
+                        <span class="option-desc">Flexible, easy to fold outward.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="thumbFlex" value="firm" />
+                      <span class="option-content">
+                        <span class="option-title">Firm and straight</span>
+                        <span class="option-desc">Stiff, strong, resists bending.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Thumb length</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="thumbLength" value="long" required />
+                      <span class="option-content">
+                        <span class="option-title">Long thumb</span>
+                        <span class="option-desc">Reaches near the first finger joint.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="thumbLength" value="balanced" />
+                      <span class="option-content">
+                        <span class="option-title">Balanced thumb</span>
+                        <span class="option-desc">Average length and proportion.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="thumbLength" value="short" />
+                      <span class="option-content">
+                        <span class="option-title">Short thumb</span>
+                        <span class="option-desc">Noticeably shorter than average.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Index and ring fingers</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="indexRing" value="index" required />
+                      <span class="option-content">
+                        <span class="option-title">Index finger longer</span>
+                        <span class="option-desc">Jupiter finger leads the ring finger.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="indexRing" value="ring" />
+                      <span class="option-content">
+                        <span class="option-title">Ring finger longer</span>
+                        <span class="option-desc">Sun finger edges past the index.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="indexRing" value="even" />
+                      <span class="option-content">
+                        <span class="option-title">About the same length</span>
+                        <span class="option-desc">Balanced length and proportion.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Little finger (Mercury)</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="mercuryLength" value="long" required />
+                      <span class="option-content">
+                        <span class="option-title">Long</span>
+                        <span class="option-desc">Reaches near the top joint of the ring finger.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="mercuryLength" value="short" />
+                      <span class="option-content">
+                        <span class="option-title">Short</span>
+                        <span class="option-desc">Ends lower than the ring finger joint.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="quiz-card">
+                  <legend>Nail shape</legend>
+                  <div class="option-grid">
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="nails" value="long" required />
+                      <span class="option-content">
+                        <span class="option-title">Long or narrow</span>
+                        <span class="option-desc">Slender nail beds or longer nails.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="nails" value="short" />
+                      <span class="option-content">
+                        <span class="option-title">Short or broad</span>
+                        <span class="option-desc">Shorter nails, wider beds.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="radio" name="nails" value="balanced" />
+                      <span class="option-content">
+                        <span class="option-title">Medium and rounded</span>
+                        <span class="option-desc">Balanced, neither long nor short.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <figure class="illustration-card illustration-card--inline">
+                  <img
+                    src="palmistry_static/images/palmistry-mounts.webp"
+                    alt="Palm diagram labeling the mounts: Jupiter, Saturn, Apollo, Mercury, Venus, Mars, Moon."
+                    loading="lazy"
+                  />
+                  <figcaption>Mounts: Jupiter, Saturn, Apollo, Mercury, Venus, Mars, Moon.</figcaption>
+                </figure>
+
+                <fieldset class="quiz-card">
+                  <legend>Prominent mounts (pick up to two)</legend>
+                  <p class="quiz-help">Look for raised areas at the base of each finger or along the palm.</p>
+                  <div class="option-grid option-grid--checks">
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="venus" />
+                      <span class="option-content">
+                        <span class="option-title">Venus</span>
+                        <span class="option-desc">Base of thumb, warmth and affection.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="moon" />
+                      <span class="option-content">
+                        <span class="option-title">Moon</span>
+                        <span class="option-desc">Outer palm, imagination and mood.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="jupiter" />
+                      <span class="option-content">
+                        <span class="option-title">Jupiter</span>
+                        <span class="option-desc">Under index, ambition and leadership.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="saturn" />
+                      <span class="option-content">
+                        <span class="option-title">Saturn</span>
+                        <span class="option-desc">Under middle, seriousness and focus.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="sun" />
+                      <span class="option-content">
+                        <span class="option-title">Sun (Apollo)</span>
+                        <span class="option-desc">Under ring, joy and creativity.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="mercury" />
+                      <span class="option-content">
+                        <span class="option-title">Mercury</span>
+                        <span class="option-desc">Under little, wit and communication.</span>
+                      </span>
+                    </label>
+                    <label class="option-card">
+                      <input class="option-input" type="checkbox" name="mounts" value="mars" />
+                      <span class="option-content">
+                        <span class="option-title">Mars</span>
+                        <span class="option-desc">Inner palm, courage and endurance.</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+              </section>
+
+              <button type="submit" class="btn-primary">Reveal my palm reading</button>
+            </form>
+
+            <div id="palmistryResults" class="palmistry-results hidden">
+              <section class="palmistry-summary">
+                <div class="summary-card">
+                  <h3>Primary hand type</h3>
+                  <p class="summary-title" id="palmistryHandTypeTitle">-</p>
+                  <p class="summary-text" id="palmistryHandTypeDesc">-</p>
+                  <div class="tag-list" id="palmistryHandTypeTags"></div>
+                </div>
+                <div class="summary-card">
+                  <h3>Top themes</h3>
+                  <ul id="palmistryTraits"></ul>
+                </div>
+              </section>
+
+              <section class="palmistry-lines">
+                <h3>Major lines</h3>
+                <div class="palmistry-grid" id="palmistryLines"></div>
+              </section>
+
+              <section class="palmistry-notes">
+                <h3>Extra notes</h3>
+                <ul id="palmistryNotes"></ul>
+              </section>
+
+              <p class="palmistry-disclaimer">
+                Palmistry is interpretive and meant for reflection, not prediction.
+              </p>
+            </div>
+
+            <div id="palmistryError" class="error hidden">
+              <p id="palmistryErrorMessage"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="dailyCardModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dailyCardTitle"
+        hidden
+      >
+        <div class="modal__overlay" data-daily-close></div>
+        <div class="modal__dialog" role="document">
+          <div class="daily-card">
+            <div class="daily-card__header">
+              <span class="daily-card__kicker">Daily insight</span>
+              <h2 id="dailyCardTitle" class="daily-card__title">Personal card of the day</h2>
+              <p id="dailyCardDate" class="daily-card__date"></p>
+            </div>
+
+            <div class="daily-card__grid">
+              <figure id="dailyCardMedia" class="daily-card__media">
+                <img id="dailyCardImage" alt="" loading="lazy" />
+              </figure>
+
+              <div class="daily-card__body">
+                <h3 id="dailyCardName" class="daily-card__name">-</h3>
+                <p id="dailyCardArcana" class="daily-card__arcana">-</p>
+                <p id="dailyCardKeywords" class="daily-card__keywords">-</p>
+                <p id="dailyCardMessage" class="daily-card__message">-</p>
+
+                <div class="daily-card__callout daily-card__callout--interpretation">
+                  <span id="dailyCardInterpretationLabel" class="daily-card__callout-label">
+                    Personalized interpretation
+                  </span>
+                  <p id="dailyCardInterpretation" class="daily-card__callout-text">-</p>
+                </div>
+
+                <div class="daily-card__callout">
+                  <span class="daily-card__callout-label">Guidance</span>
+                  <p id="dailyCardGuidance" class="daily-card__callout-text">-</p>
+                </div>
+
+                <div class="daily-card__actions">
+                  <button class="secondary-btn" type="button" data-daily-close>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="preludeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="preludeTitle" hidden>
+        <div class="modal__overlay" data-modal-close></div>
+        <div class="modal__dialog" role="document">
+          <div class="prelude-card prelude-card--modal">
+            <div class="prelude-header">
+              <span class="prelude-kicker">Tarot prelude</span>
+              <h2 id="preludeTitle" class="prelude-title">Attune your reading</h2>
+              <p>Take a breath. Hold a single, honest question.</p>
+            </div>
+
+            <div class="prelude-steps">
+              <div class="prelude-step">
+                <span class="step-badge">1</span>
+                <div>
+                  <h3>Breathe (10 seconds)</h3>
+                  <p>Slow inhale, slow exhale. Let the noise settle.</p>
+                </div>
+              </div>
+              <div class="prelude-step">
+                <span class="step-badge">2</span>
+                <div>
+                  <h3>Focus</h3>
+                  <p>Pick one situation, not ten. Clarity loves simplicity.</p>
+                </div>
+              </div>
+              <div class="prelude-step">
+                <span class="step-badge">3</span>
+                <div>
+                  <h3>Ask</h3>
+                  <p>Use open questions that invite insight.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="prelude-guides">
+              <div class="guide-card guide-card--do">
+                <h4>Ask like this</h4>
+                <ul>
+                  <li>What should I consider about ___?</li>
+                  <li>What energy surrounds ___?</li>
+                  <li>How can I move forward with ___?</li>
+                </ul>
+              </div>
+              <div class="guide-card guide-card--dont">
+                <h4>Avoid this</h4>
+                <ul>
+                  <li>Yes or no questions.</li>
+                  <li>Will they or will it happen?</li>
+                  <li>Multiple topics in one spread.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="prelude-formula">
+              <span class="formula-label">Prompt formula</span>
+              <p>Show me what I need to understand about ___ so I can ___.</p>
+            </div>
+
+            <div class="modal-actions">
+              <button class="primary-btn" type="button" data-modal-close>I'm ready</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script src="data/cards.js"></script>
     <script src="data/personalized_interpretations.generated.js"></script>
     <script src="app.js"></script>
+    <script src="numerology_static/app.js"></script>
+    <script src="palmistry_static/app.js"></script>
   </body>
 </html>
