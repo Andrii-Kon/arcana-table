@@ -529,6 +529,33 @@ body.modal-open {
   overflow: hidden;
 }
 
+body.auth-locked main.page {
+  display: none;
+}
+
+body.auth-locked .modal__overlay {
+  display: none;
+}
+
+body.auth-locked [data-auth-close] {
+  display: none;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-shell {
+  width: min(520px, 92vw);
+}
+
+.auth-card--standalone {
+  width: 100%;
+}
+
 .prelude-card {
   position: relative;
   display: grid;

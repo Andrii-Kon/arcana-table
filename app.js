@@ -1710,6 +1710,19 @@ const setAuthStatus = (message) => {
   authStatus.textContent = message || '';
 };
 
+const syncServerSession = async (accessToken) => {
+  if (!accessToken) return;
+  try {
+    await fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: accessToken }),
+    });
+  } catch (error) {
+    // Ignore network errors.
+  }
+};
+
 const refreshAuthUI = async () => {
   if (!authTrigger) return;
   if (!supabaseClient) {
@@ -1731,6 +1744,9 @@ const refreshAuthUI = async () => {
     if (authIdentity) authIdentity.textContent = `Signed in as ${email}`;
     setAuthStatus('You are signed in.');
     if (authSignOut) authSignOut.hidden = false;
+    syncServerSession(session.access_token);
+    document.body.classList.remove('auth-locked');
+    closeAuthModal();
   } else {
     authTrigger.textContent = 'Sign in';
     authTrigger.classList.remove('is-authenticated');
@@ -1738,6 +1754,8 @@ const refreshAuthUI = async () => {
     if (authIdentity) authIdentity.textContent = 'Not signed in';
     setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
+    document.body.classList.add('auth-locked');
+    openAuthModal();
   }
 };
 
@@ -1770,6 +1788,7 @@ const openAuthModal = () => {
 
 const closeAuthModal = () => {
   if (!authModal) return;
+  if (document.body.classList.contains('auth-locked')) return;
   closeModal(authModal);
 };
 
@@ -1831,6 +1850,7 @@ if (authSignOut) {
   authSignOut.addEventListener('click', async () => {
     if (!supabaseClient) return;
     await supabaseClient.auth.signOut();
+    await fetch('/api/logout', { method: 'POST' });
     await refreshAuthUI();
     setAuthStatus('Signed out.');
   });

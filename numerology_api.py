@@ -4,7 +4,7 @@ Flask API для нумерологической системы.
 Предоставляет REST API endpoints для расчета нумерологических чисел.
 """
 
-from flask import Flask, jsonify, request, send_from_directory, redirect
+from flask import Flask, jsonify, request, send_from_directory, redirect, make_response
 from flask_cors import CORS
 from datetime import datetime, date
 from numerology_system import (
@@ -14,6 +14,10 @@ from numerology_system import (
 )
 from numerology_compatibility import CompatibilityCalculator
 import os
+import time
+import requests
+import jwt
+from jwt import PyJWKClient
 
 
 def calculate_formulas(full_name: str, birth_date: date, current_date: date) -> dict:
@@ -176,14 +180,86 @@ NUMEROLOGY_DIR = os.path.join(ROOT_DIR, 'numerology_static')
 PALMISTRY_DIR = os.path.join(ROOT_DIR, 'palmistry_static')
 DATA_DIR = os.path.join(ROOT_DIR, 'data')
 ASSETS_DIR = os.path.join(ROOT_DIR, 'assets')
+AUTH_HTML = os.path.join(ROOT_DIR, 'auth.html')
+CONFIG_JS = os.path.join(ROOT_DIR, 'config.js')
+AUTH_JS = os.path.join(ROOT_DIR, 'auth.js')
+
+SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
+SUPABASE_JWKS_URL = os.getenv('SUPABASE_JWKS_URL', '').strip()
+if not SUPABASE_JWKS_URL and SUPABASE_URL:
+    SUPABASE_JWKS_URL = SUPABASE_URL.rstrip('/') + '/auth/v1/keys'
+
+_jwks_client = None
+_jwks_client_set_at = 0
+
+
+def _get_jwks_client() -> PyJWKClient | None:
+    global _jwks_client, _jwks_client_set_at
+    if not SUPABASE_JWKS_URL:
+        return None
+    now = time.time()
+    if _jwks_client and now - _jwks_client_set_at < 6 * 60 * 60:
+        return _jwks_client
+    _jwks_client = PyJWKClient(SUPABASE_JWKS_URL)
+    _jwks_client_set_at = now
+    return _jwks_client
+
+
+def verify_access_token(token: str) -> bool:
+    if not token:
+        return False
+    client = _get_jwks_client()
+    if not client:
+        return False
+    try:
+        signing_key = client.get_signing_key_from_jwt(token).key
+        jwt.decode(
+            token,
+            signing_key,
+            algorithms=["ES256", "RS256"],
+            audience="authenticated",
+            options={"verify_exp": True},
+        )
+        return True
+    except Exception:
+        return False
+
+
+def is_authenticated(req) -> bool:
+    token = req.cookies.get('sb_access')
+    return verify_access_token(token)
+
+
+def is_auth_allowed(path: str) -> bool:
+    if path.startswith('/auth'):
+        return True
+    if path in ['/styles.css', '/config.js', '/auth.js', '/favicon.ico']:
+        return True
+    if path.startswith('/assets'):
+        return True
+    if path.startswith('/api/session') or path.startswith('/api/logout'):
+        return True
+    return False
 
 app = Flask(__name__)
 CORS(app)  # Разрешаем CORS для фронтенда
+
+@app.before_request
+def require_auth():
+    if is_auth_allowed(request.path):
+        return None
+    if is_authenticated(request):
+        return None
+    if request.path.startswith('/api/'):
+        return jsonify({"status": "unauthorized"}), 401
+    return redirect('/auth', code=302)
 
 
 @app.route('/', methods=['GET'])
 def serve_tarot_index():
     """Главная страница Таро"""
+    if not is_authenticated(request):
+        return send_from_directory(ROOT_DIR, 'auth.html')
     return send_from_directory(ROOT_DIR, 'index.html')
 
 
@@ -196,6 +272,13 @@ def serve_tarot_styles():
 def serve_tarot_app():
     return send_from_directory(ROOT_DIR, 'app.js')
 
+@app.route('/config.js', methods=['GET'])
+def serve_config_js():
+    return send_from_directory(ROOT_DIR, 'config.js')
+
+@app.route('/auth.js', methods=['GET'])
+def serve_auth_js():
+    return send_from_directory(ROOT_DIR, 'auth.js')
 
 @app.route('/data/<path:path>', methods=['GET'])
 def serve_tarot_data(path):
@@ -205,6 +288,11 @@ def serve_tarot_data(path):
 @app.route('/assets/<path:path>', methods=['GET'])
 def serve_tarot_assets(path):
     return send_from_directory(ASSETS_DIR, path)
+
+@app.route('/auth', methods=['GET'])
+@app.route('/auth/', methods=['GET'])
+def serve_auth_page():
+    return send_from_directory(ROOT_DIR, 'auth.html')
 
 
 @app.route('/numerology', methods=['GET'])
@@ -242,7 +330,32 @@ def serve_palmistry_assets(path):
 @app.route('/auth/callback/', methods=['GET'])
 def auth_callback():
     """Supabase magic-link callback."""
-    return send_from_directory(ROOT_DIR, 'index.html')
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
+@app.route('/api/session', methods=['POST'])
+def create_session():
+    data = request.get_json(silent=True) or {}
+    token = data.get('access_token', '')
+    if not verify_access_token(token):
+        return jsonify({"status": "error", "message": "Invalid token"}), 401
+    response = make_response(jsonify({"status": "ok"}))
+    response.set_cookie(
+        'sb_access',
+        token,
+        httponly=True,
+        secure=request.is_secure,
+        samesite='Lax',
+        max_age=60 * 60 * 24 * 7,
+    )
+    return response
+
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    response = make_response(jsonify({"status": "ok"}))
+    response.delete_cookie('sb_access')
+    return response
 
 
 @app.route('/api/health', methods=['GET'])

@@ -987,43 +987,6 @@
         </div>
       </div>
 
-      <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
-        <div class="modal__overlay" data-auth-close></div>
-        <div class="modal__dialog" role="document">
-          <div class="auth-card">
-            <div class="auth-card__header">
-              <span class="auth-card__kicker">Magic link</span>
-              <h2 id="authTitle" class="auth-card__title">Sign in</h2>
-              <p>We will email you a one-time link. No password needed.</p>
-            </div>
-
-            <form id="authForm" class="auth-form" novalidate>
-              <label class="auth-label" for="authEmail">Email</label>
-              <input
-                id="authEmail"
-                class="auth-input"
-                type="email"
-                name="email"
-                autocomplete="email"
-                placeholder="you@example.com"
-                required
-              />
-              <button class="primary-btn auth-submit" type="submit">Send magic link</button>
-            </form>
-
-            <div class="auth-status-row">
-              <p id="authStatus" class="auth-status"></p>
-              <p id="authIdentity" class="auth-identity">Not signed in</p>
-            </div>
-
-            <div class="auth-actions">
-              <button id="authSignOut" class="secondary-btn" type="button" hidden>Sign out</button>
-              <button class="secondary-btn" type="button" data-auth-close>Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div id="preludeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="preludeTitle" hidden>
         <div class="modal__overlay" data-modal-close></div>
         <div class="modal__dialog" role="document">
@@ -1090,13 +1053,46 @@
       </div>
     </main>
 
+    <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+      <div class="modal__overlay" data-auth-close></div>
+      <div class="modal__dialog" role="document">
+        <div class="auth-card">
+          <div class="auth-card__header">
+            <span class="auth-card__kicker">Magic link</span>
+            <h2 id="authTitle" class="auth-card__title">Sign in</h2>
+            <p>We will email you a one-time link. No password needed.</p>
+          </div>
+
+          <form id="authForm" class="auth-form" novalidate>
+            <label class="auth-label" for="authEmail">Email</label>
+            <input
+              id="authEmail"
+              class="auth-input"
+              type="email"
+              name="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              required
+            />
+            <button class="primary-btn auth-submit" type="submit">Send magic link</button>
+          </form>
+
+          <div class="auth-status-row">
+            <p id="authStatus" class="auth-status"></p>
+            <p id="authIdentity" class="auth-identity">Not signed in</p>
+          </div>
+
+          <div class="auth-actions">
+            <button id="authSignOut" class="secondary-btn" type="button" hidden>Sign out</button>
+            <button class="secondary-btn" type="button" data-auth-close>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="data/cards.js"></script>
     <script src="data/personalized_interpretations.generated.js"></script>
-    <script>
-      window.SUPABASE_URL = 'https://cjpvblsyqbasygeovzqm.supabase.co';
-      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcHZibHN5cWJhc3lnZW92enFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTMxNTcsImV4cCI6MjA4NDAyOTE1N30.1lBHrliLlcq-xY2AmiSIzgnjdOWQaPQsl5_zfWFni1s';
-      window.SUPABASE_REDIRECT = 'https://andriikun.pythonanywhere.com/auth/callback';
-    </script>
+    <script src="config.js?v=20260115"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js?v=20260115"></script>
     <script src="numerology_static/app.js"></script>

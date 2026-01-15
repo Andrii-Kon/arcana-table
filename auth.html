@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in - Arcana Table</title>
+    <base href="/" />
+    <link rel="stylesheet" href="styles.css?v=20260115" />
+  </head>
+  <body class="auth-page">
+    <main class="auth-shell">
+      <div class="auth-card auth-card--standalone">
+        <div class="auth-card__header">
+          <span class="auth-card__kicker">Magic link</span>
+          <h1 class="auth-card__title">Sign in</h1>
+          <p>We will email you a one-time link. No password needed.</p>
+        </div>
+
+        <form id="authForm" class="auth-form" novalidate>
+          <label class="auth-label" for="authEmail">Email</label>
+          <input
+            id="authEmail"
+            class="auth-input"
+            type="email"
+            name="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          />
+          <button class="primary-btn auth-submit" type="submit">Send magic link</button>
+        </form>
+
+        <div class="auth-status-row">
+          <p id="authStatus" class="auth-status"></p>
+          <p id="authIdentity" class="auth-identity">Not signed in</p>
+        </div>
+      </div>
+    </main>
+
+    <script src="config.js?v=20260115"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js?v=20260115"></script>
+  </body>
+</html>
