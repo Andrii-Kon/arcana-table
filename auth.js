@@ -39,12 +39,14 @@ const supabaseClient =
     : null;
 
 const syncServerSession = async (accessToken) => {
-  if (!accessToken) return;
-  await fetch('/api/session', {
+  if (!accessToken) return { ok: false };
+  const response = await fetch('/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     body: JSON.stringify({ access_token: accessToken }),
   });
+  return { ok: response.ok };
 };
 
 const handleAuthRedirect = async () => {
@@ -55,7 +57,11 @@ const handleAuthRedirect = async () => {
   if (url.searchParams.get('code')) {
     const { data, error } = await supabaseClient.auth.exchangeCodeForSession(currentUrl);
     if (!error && data?.session?.access_token) {
-      await syncServerSession(data.session.access_token);
+      const result = await syncServerSession(data.session.access_token);
+      if (!result.ok) {
+        setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
+        return;
+      }
       window.location.href = '/';
     }
     return;
@@ -65,7 +71,11 @@ const handleAuthRedirect = async () => {
     if (supabaseClient.auth.getSessionFromUrl) {
       const { data } = await supabaseClient.auth.getSessionFromUrl();
       if (data?.session?.access_token) {
-        await syncServerSession(data.session.access_token);
+        const result = await syncServerSession(data.session.access_token);
+        if (!result.ok) {
+          setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
+          return;
+        }
         window.location.href = '/';
       }
     }
@@ -85,7 +95,11 @@ const refreshAuthUI = async () => {
   if (session?.user) {
     setIdentity(`Signed in as ${session.user.email || 'Account'}`);
     setAuthStatus('You are signed in.');
-    await syncServerSession(session.access_token);
+    const result = await syncServerSession(session.access_token);
+    if (!result.ok) {
+      setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
+      return;
+    }
     window.location.href = '/';
   } else {
     setIdentity('Not signed in');
