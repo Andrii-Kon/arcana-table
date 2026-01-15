@@ -129,8 +129,10 @@ const handleAuthRedirect = async () => {
   if (!supabaseClient) return;
   const currentUrl = window.location.href;
   const url = new URL(currentUrl);
+  const isAuthPage = window.location.pathname.startsWith('/auth');
+  const hasAccessTokenHash = window.location.hash.includes('access_token=');
   const recoveryType = getRecoveryType();
-  if (recoveryType === 'recovery') {
+  if (recoveryType === 'recovery' || (isAuthPage && hasAccessTokenHash && !recoveryType)) {
     isRecoveryFlow = true;
     setRecoveryPending(true);
   }
