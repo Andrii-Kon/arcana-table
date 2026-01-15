@@ -770,13 +770,6 @@ body.modal-open {
     margin-left: 0;
   }
 
-  .auth-trigger {
-    order: 3;
-    width: 100%;
-    font-size: 0.6rem;
-    letter-spacing: 0.14em;
-  }
-
   .spread-actions {
     justify-content: center;
   }
@@ -806,12 +799,20 @@ body.modal-open {
   .site-nav {
     flex-wrap: nowrap;
     gap: 6px;
+    justify-content: center;
   }
 
   .site-link {
+    padding: 5px 8px;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+  }
+
+  .auth-trigger {
     padding: 6px 10px;
-    font-size: 0.6rem;
-    letter-spacing: 0.14em;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    border-radius: 12px;
   }
 }
 

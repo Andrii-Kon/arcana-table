@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arcana Table</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260115" />
   </head>
   <body>
     <main class="page">
@@ -30,17 +30,17 @@
           <button class="site-link" type="button" data-view="palmistry" aria-pressed="false">
             Palmistry
           </button>
+          <button
+            id="authTrigger"
+            class="auth-trigger"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="authModal"
+            data-auth-open
+          >
+            Sign in
+          </button>
         </nav>
-
-        <button
-          id="authTrigger"
-          class="auth-trigger"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="authModal"
-        >
-          Sign in
-        </button>
       </header>
 
       <div id="tarot" class="view view--tarot" aria-label="Tarot reading">
@@ -1100,7 +1100,7 @@
       window.SUPABASE_REDIRECT = 'https://andriikun.pythonanywhere.com/auth/callback';
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=20260115"></script>
     <script src="numerology_static/app.js"></script>
     <script src="palmistry_static/app.js"></script>
   </body>

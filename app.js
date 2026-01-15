@@ -1784,6 +1784,12 @@ if (authTrigger) {
   authTrigger.addEventListener('click', openAuthModal);
 }
 
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest('[data-auth-open]');
+  if (!trigger) return;
+  openAuthModal();
+});
+
 if (authForm) {
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
