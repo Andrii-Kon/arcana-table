@@ -1053,44 +1053,6 @@
       </div>
     </main>
 
-    <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
-      <div class="modal__overlay" data-auth-close></div>
-      <div class="modal__dialog" role="document">
-        <div class="auth-card">
-          <div class="auth-card__header">
-            <span class="auth-card__kicker">Magic link</span>
-            <h2 id="authTitle" class="auth-card__title">Sign in</h2>
-            <p class="auth-card__note">We will email you a one-time link. No password needed.</p>
-          </div>
-
-          <form id="authForm" class="auth-form" novalidate>
-            <label class="auth-label" for="authEmail">Email</label>
-            <input
-              id="authEmail"
-              class="auth-input"
-              type="email"
-              name="email"
-              autocomplete="email"
-              placeholder="you@example.com"
-              required
-            />
-            <button class="primary-btn auth-submit" type="submit">Send magic link</button>
-          </form>
-
-          <div class="auth-status-row">
-            <p id="authStatus" class="auth-status"></p>
-            <p id="authDisplayName" class="auth-identity" hidden></p>
-            <p id="authDisplayEmail" class="auth-identity" hidden></p>
-          </div>
-
-          <div class="auth-actions">
-            <button id="authSignOut" class="secondary-btn" type="button" hidden>Sign out</button>
-            <button class="secondary-btn" type="button" data-auth-close>Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <script src="data/cards.js"></script>
     <script src="data/personalized_interpretations.generated.js"></script>
     <script src="config.js?v=20260115"></script>
