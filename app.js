@@ -1684,6 +1684,13 @@ const authNameWrap = document.querySelector('[data-auth-name]');
 const authNameInput = document.getElementById('authName');
 const authHint = document.querySelector('[data-auth-hint]');
 const authTitle = document.getElementById('authTitle');
+const authVerify = document.getElementById('authVerify');
+const authVerifyEmail = document.getElementById('authVerifyEmail');
+const authResend = document.querySelector('[data-auth-resend]');
+const authReset = document.getElementById('authReset');
+const authResetEmail = document.getElementById('authResetEmail');
+const authForgot = document.querySelector('[data-auth-forgot]');
+const authResetSend = document.querySelector('[data-auth-reset-send]');
 
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
@@ -1827,6 +1834,9 @@ if (authForm) {
     const showName = mode === 'signup';
     if (authNameWrap) authNameWrap.hidden = !showName;
     if (authHint) authHint.hidden = !showName;
+    if (authVerify) authVerify.hidden = true;
+    if (authReset) authReset.hidden = true;
+    if (authForm) authForm.hidden = false;
     if (!showName && authNameInput) authNameInput.value = '';
     if (authTitle) authTitle.textContent = showName ? 'Create an account' : 'Login your account';
     const submitBtn = authForm.querySelector('.auth-submit');
@@ -1890,6 +1900,9 @@ if (authForm) {
         return;
       }
 
+      if (authVerifyEmail) authVerifyEmail.textContent = maskEmail(email);
+      if (authVerify) authVerify.hidden = false;
+      authForm.hidden = true;
       setAuthStatus('Check your email to confirm your account.');
       return;
     }
@@ -1908,6 +1921,16 @@ if (authForm) {
     if (data?.session?.access_token) {
       syncServerSession(data.session.access_token);
     }
+  });
+}
+
+if (authForgot) {
+  authForgot.addEventListener('click', () => {
+    if (authReset) authReset.hidden = false;
+    if (authVerify) authVerify.hidden = true;
+    if (authForm) authForm.hidden = true;
+    if (authHint) authHint.hidden = true;
+    if (authTitle) authTitle.textContent = 'Reset your password';
   });
 }
 
@@ -1938,6 +1961,50 @@ document.querySelectorAll('[data-auth-toggle]').forEach((toggle) => {
     authPasswordInput.type = isHidden ? 'text' : 'password';
   });
 });
+
+const maskEmail = (email) => {
+  if (!email || !email.includes('@')) return email || '';
+  const [name, domain] = email.split('@');
+  if (name.length <= 2) return `${name[0]}***@${domain}`;
+  return `${name.slice(0, 2)}${'*'.repeat(Math.max(3, name.length - 2))}@${domain}`;
+};
+
+if (authResend) {
+  authResend.addEventListener('click', async () => {
+    const email = authEmailInput?.value.trim();
+    if (!email || !supabaseClient) return;
+    setAuthStatus('Resending verification link...');
+    const { error } = await supabaseClient.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: SUPABASE_REDIRECT },
+    });
+    if (error) {
+      setAuthStatus(error.message);
+      return;
+    }
+    setAuthStatus('Verification link resent.');
+  });
+}
+
+if (authResetSend) {
+  authResetSend.addEventListener('click', async () => {
+    const email = authResetEmail?.value.trim() || authEmailInput?.value.trim();
+    if (!email || !supabaseClient) {
+      setAuthStatus('Enter your email to reset the password.');
+      return;
+    }
+    setAuthStatus('Sending reset link...');
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: SUPABASE_REDIRECT,
+    });
+    if (error) {
+      setAuthStatus(error.message);
+      return;
+    }
+    setAuthStatus('Password reset link sent. Check your email.');
+  });
+}
 
 const preludeModal = document.getElementById('preludeModal');
 
