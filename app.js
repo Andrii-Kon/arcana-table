@@ -1671,6 +1671,168 @@ if (dailyTrigger) {
   });
 }
 
+const authModal = document.getElementById('authModal');
+const authTrigger = document.getElementById('authTrigger');
+const authForm = document.getElementById('authForm');
+const authEmailInput = document.getElementById('authEmail');
+const authStatus = document.getElementById('authStatus');
+const authIdentity = document.getElementById('authIdentity');
+const authSignOut = document.getElementById('authSignOut');
+
+const SUPABASE_URL = window.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+const SUPABASE_REDIRECT =
+  window.SUPABASE_REDIRECT || `${window.location.origin}/auth/callback`;
+
+const hasSupabaseConfig = () => {
+  return (
+    SUPABASE_URL &&
+    SUPABASE_ANON_KEY &&
+    !SUPABASE_URL.includes('YOUR_SUPABASE_URL') &&
+    !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')
+  );
+};
+
+const supabaseClient =
+  window.supabase && hasSupabaseConfig()
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          detectSessionInUrl: true,
+          persistSession: true,
+        },
+      })
+    : null;
+
+const setAuthStatus = (message) => {
+  if (!authStatus) return;
+  authStatus.textContent = message || '';
+};
+
+const refreshAuthUI = async () => {
+  if (!authTrigger) return;
+  if (!supabaseClient) {
+    authTrigger.textContent = 'Sign in';
+    authTrigger.disabled = true;
+    setAuthStatus('Supabase keys are missing.');
+    return;
+  }
+
+  const {
+    data: { session },
+  } = await supabaseClient.auth.getSession();
+
+  if (session?.user) {
+    const email = session.user.email || 'Signed in';
+    authTrigger.textContent = 'Account';
+    authTrigger.classList.add('is-authenticated');
+    if (authIdentity) authIdentity.textContent = email;
+    if (authSignOut) authSignOut.hidden = false;
+  } else {
+    authTrigger.textContent = 'Sign in';
+    authTrigger.classList.remove('is-authenticated');
+    if (authIdentity) authIdentity.textContent = 'Not signed in';
+    if (authSignOut) authSignOut.hidden = true;
+  }
+};
+
+const handleAuthRedirect = async () => {
+  if (!supabaseClient) return;
+  const currentUrl = window.location.href;
+  const url = new URL(currentUrl);
+
+  if (url.searchParams.get('code')) {
+    const { error } = await supabaseClient.auth.exchangeCodeForSession(currentUrl);
+    if (!error) {
+      window.history.replaceState({}, document.title, '/');
+    }
+    return;
+  }
+
+  if (window.location.hash.includes('access_token=')) {
+    if (supabaseClient.auth.getSessionFromUrl) {
+      await supabaseClient.auth.getSessionFromUrl();
+    }
+    window.history.replaceState({}, document.title, '/');
+  }
+};
+
+const openAuthModal = () => {
+  if (!authModal) return;
+  setAuthStatus('');
+  openModal(authModal);
+};
+
+const closeAuthModal = () => {
+  if (!authModal) return;
+  closeModal(authModal);
+};
+
+if (authModal) {
+  const closeTargets = authModal.querySelectorAll('[data-auth-close]');
+  closeTargets.forEach((target) => {
+    target.addEventListener('click', closeAuthModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !authModal.hidden) {
+      closeAuthModal();
+    }
+  });
+}
+
+if (authTrigger) {
+  authTrigger.addEventListener('click', openAuthModal);
+}
+
+if (authForm) {
+  authForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!supabaseClient) {
+      setAuthStatus('Supabase keys are missing.');
+      return;
+    }
+
+    const email = authEmailInput?.value.trim();
+    if (!email) {
+      setAuthStatus('Enter a valid email address.');
+      return;
+    }
+
+    setAuthStatus('Sending magic link...');
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: SUPABASE_REDIRECT,
+      },
+    });
+
+    if (error) {
+      setAuthStatus(error.message);
+      return;
+    }
+
+    setAuthStatus('Check your email for the magic link.');
+  });
+}
+
+if (authSignOut) {
+  authSignOut.addEventListener('click', async () => {
+    if (!supabaseClient) return;
+    await supabaseClient.auth.signOut();
+    await refreshAuthUI();
+    setAuthStatus('Signed out.');
+  });
+}
+
+if (supabaseClient) {
+  handleAuthRedirect().then(refreshAuthUI);
+  supabaseClient.auth.onAuthStateChange(() => {
+    refreshAuthUI();
+  });
+} else {
+  refreshAuthUI();
+}
+
 const preludeModal = document.getElementById('preludeModal');
 
 const openPreludeModal = () => {

@@ -238,6 +238,12 @@ def redirect_legacy_palmistry_root():
 def serve_palmistry_assets(path):
     return send_from_directory(PALMISTRY_DIR, path)
 
+@app.route('/auth/callback', methods=['GET'])
+@app.route('/auth/callback/', methods=['GET'])
+def auth_callback():
+    """Supabase magic-link callback."""
+    return send_from_directory(ROOT_DIR, 'index.html')
+
 
 @app.route('/api/health', methods=['GET'])
 def health():
