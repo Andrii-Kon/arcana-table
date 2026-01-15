@@ -1679,6 +1679,11 @@ const authEmailInput = document.getElementById('authEmail');
 const authStatus = document.getElementById('authStatus');
 const authIdentity = document.getElementById('authIdentity');
 const authSignOut = document.getElementById('authSignOut');
+const authPasswordInput = document.getElementById('authPassword');
+const authNameWrap = document.querySelector('[data-auth-name]');
+const authNameInput = document.getElementById('authName');
+const authHint = document.querySelector('[data-auth-hint]');
+const authTitle = document.getElementById('authTitle');
 
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
@@ -1816,6 +1821,35 @@ document.addEventListener('click', (event) => {
 });
 
 if (authForm) {
+  let authAction = 'signin';
+  const setMode = (mode) => {
+    authAction = mode;
+    const showName = mode === 'signup';
+    if (authNameWrap) authNameWrap.hidden = !showName;
+    if (authHint) authHint.hidden = !showName;
+    if (!showName && authNameInput) authNameInput.value = '';
+    if (authTitle) authTitle.textContent = showName ? 'Create an account' : 'Login your account';
+    const submitBtn = authForm.querySelector('.auth-submit');
+    if (submitBtn) submitBtn.textContent = showName ? 'Sign up' : 'Login';
+    document.querySelectorAll('.auth-switch').forEach((line) => {
+      if (line.classList.contains('auth-switch--signup')) {
+        line.hidden = !showName;
+      }
+      if (line.classList.contains('auth-switch--signin')) {
+        line.hidden = showName;
+      }
+    });
+  };
+
+  setMode('signin');
+
+  document.addEventListener('click', (event) => {
+    const modeTarget = event.target.closest('[data-auth-mode]');
+    if (!modeTarget) return;
+    const mode = modeTarget.getAttribute('data-auth-mode');
+    if (mode) setMode(mode);
+  });
+
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!supabaseClient) {
@@ -1824,17 +1858,46 @@ if (authForm) {
     }
 
     const email = authEmailInput?.value.trim();
-    if (!email) {
-      setAuthStatus('Enter a valid email address.');
+    const password = authPasswordInput?.value || '';
+    const name = authNameInput?.value.trim() || '';
+    if (!email || !password) {
+      setAuthStatus('Enter a valid email and password.');
       return;
     }
 
-    setAuthStatus('Sending magic link...');
-    const { error } = await supabaseClient.auth.signInWithOtp({
+    if (authAction === 'signup') {
+      if (!name) {
+        setAuthStatus('Enter your name to create an account.');
+        return;
+      }
+      setAuthStatus('Creating your account...');
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+          emailRedirectTo: SUPABASE_REDIRECT,
+        },
+      });
+
+      if (error) {
+        setAuthStatus(error.message);
+        return;
+      }
+
+      if (data?.session?.access_token) {
+        syncServerSession(data.session.access_token);
+        return;
+      }
+
+      setAuthStatus('Check your email to confirm your account.');
+      return;
+    }
+
+    setAuthStatus('Signing you in...');
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: SUPABASE_REDIRECT,
-      },
+      password,
     });
 
     if (error) {
@@ -1842,7 +1905,9 @@ if (authForm) {
       return;
     }
 
-    setAuthStatus('Check your email for the magic link.');
+    if (data?.session?.access_token) {
+      syncServerSession(data.session.access_token);
+    }
   });
 }
 
@@ -1852,7 +1917,7 @@ if (authSignOut) {
     await supabaseClient.auth.signOut();
     await fetch('/api/logout', { method: 'POST' });
     await refreshAuthUI();
-    setAuthStatus('Signed out.');
+    setAuthStatus('Signed out on this device.');
     window.location.href = '/auth';
   });
 }
@@ -1865,6 +1930,14 @@ if (supabaseClient) {
 } else {
   refreshAuthUI();
 }
+
+document.querySelectorAll('[data-auth-toggle]').forEach((toggle) => {
+  toggle.addEventListener('click', () => {
+    if (!authPasswordInput) return;
+    const isHidden = authPasswordInput.type === 'password';
+    authPasswordInput.type = isHidden ? 'text' : 'password';
+  });
+});
 
 const preludeModal = document.getElementById('preludeModal');
 

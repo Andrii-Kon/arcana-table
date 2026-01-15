@@ -22,6 +22,10 @@
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: 'Cormorant Garamond', 'Times New Roman', serif;
   color: var(--ink);
@@ -451,6 +455,21 @@ body::before {
   gap: 6px;
 }
 
+.auth-card__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: rgba(30, 26, 22, 0.7);
+  margin-bottom: 6px;
+}
+
+.auth-card__icon svg {
+  width: 36px;
+  height: 36px;
+}
+
 .auth-card__kicker {
   font-family: 'Cinzel', 'Times New Roman', serif;
   text-transform: uppercase;
@@ -489,6 +508,59 @@ body::before {
   font-size: 1rem;
 }
 
+.auth-password {
+  position: relative;
+}
+
+.auth-password__toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: rgba(30, 26, 22, 0.6);
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.auth-password__toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.auth-hint {
+  margin: 8px 0 0;
+  color: rgba(30, 26, 22, 0.6);
+  font-size: 0.9rem;
+}
+
+.auth-switch {
+  margin: 0;
+  color: rgba(30, 26, 22, 0.7);
+}
+
+.auth-link {
+  border: none;
+  background: none;
+  color: #2c61ff;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.auth-forgot {
+  margin-top: 6px;
+  align-self: flex-end;
+}
+
+.auth-name-row {
+  display: grid;
+  gap: 8px;
+}
+
 .auth-status {
   min-height: 1.2em;
   color: rgba(30, 26, 22, 0.7);
@@ -513,6 +585,23 @@ body::before {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.auth-actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 10px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .auth-card.is-authenticated .auth-form {

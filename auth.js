@@ -4,9 +4,17 @@ const SUPABASE_REDIRECT =
   window.SUPABASE_REDIRECT || `${window.location.origin}/auth/callback`;
 
 const authForm = document.getElementById('authForm');
+const authNameWrap = document.querySelector('[data-auth-name]');
+const authNameInput = document.getElementById('authName');
 const authEmailInput = document.getElementById('authEmail');
+const authPasswordInput = document.getElementById('authPassword');
 const authStatus = document.getElementById('authStatus');
 const authIdentity = document.getElementById('authIdentity');
+const authHint = document.querySelector('[data-auth-hint]');
+const authTitle = document.getElementById('authTitle');
+
+let cachedSession = null;
+let authAction = 'signin';
 
 const setAuthStatus = (message) => {
   if (!authStatus) return;
@@ -91,10 +99,11 @@ const refreshAuthUI = async () => {
   const {
     data: { session },
   } = await supabaseClient.auth.getSession();
+  cachedSession = session || null;
 
   if (session?.user) {
     setIdentity(`Signed in as ${session.user.email || 'Account'}`);
-    setAuthStatus('You are signed in.');
+    setAuthStatus('You are signed in on this device.');
     const result = await syncServerSession(session.access_token);
     if (!result.ok) {
       setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
@@ -107,6 +116,34 @@ const refreshAuthUI = async () => {
 };
 
 if (authForm) {
+  const setMode = (mode) => {
+    authAction = mode;
+    const showName = mode === 'signup';
+    if (authNameWrap) authNameWrap.hidden = !showName;
+    if (authHint) authHint.hidden = !showName;
+    if (!showName && authNameInput) authNameInput.value = '';
+    if (authTitle) authTitle.textContent = showName ? 'Create an account' : 'Login your account';
+    const submitBtn = authForm.querySelector('.auth-submit');
+    if (submitBtn) submitBtn.textContent = showName ? 'Sign up' : 'Login';
+    document.querySelectorAll('.auth-switch').forEach((line) => {
+      if (line.classList.contains('auth-switch--signup')) {
+        line.hidden = !showName;
+      }
+      if (line.classList.contains('auth-switch--signin')) {
+        line.hidden = showName;
+      }
+    });
+  };
+
+  setMode('signin');
+
+  document.addEventListener('click', (event) => {
+    const modeTarget = event.target.closest('[data-auth-mode]');
+    if (!modeTarget) return;
+    const mode = modeTarget.getAttribute('data-auth-mode');
+    if (mode) setMode(mode);
+  });
+
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!supabaseClient) {
@@ -115,17 +152,51 @@ if (authForm) {
     }
 
     const email = authEmailInput?.value.trim();
-    if (!email) {
-      setAuthStatus('Enter a valid email address.');
+    const password = authPasswordInput?.value || '';
+    const name = authNameInput?.value.trim() || '';
+    if (!email || !password) {
+      setAuthStatus('Enter a valid email and password.');
       return;
     }
 
-    setAuthStatus('Sending magic link...');
-    const { error } = await supabaseClient.auth.signInWithOtp({
+    if (authAction === 'signup') {
+      if (!name) {
+        setAuthStatus('Enter your name to create an account.');
+        return;
+      }
+      setAuthStatus('Creating your account...');
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+          emailRedirectTo: SUPABASE_REDIRECT,
+        },
+      });
+
+      if (error) {
+        setAuthStatus(error.message);
+        return;
+      }
+
+      if (data?.session?.access_token) {
+        const result = await syncServerSession(data.session.access_token);
+        if (!result.ok) {
+          setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
+          return;
+        }
+        window.location.href = '/';
+        return;
+      }
+
+      setAuthStatus('Check your email to confirm your account.');
+      return;
+    }
+
+    setAuthStatus('Signing you in...');
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: SUPABASE_REDIRECT,
-      },
+      password,
     });
 
     if (error) {
@@ -133,7 +204,14 @@ if (authForm) {
       return;
     }
 
-    setAuthStatus('Check your email for the magic link.');
+    if (data?.session?.access_token) {
+      const result = await syncServerSession(data.session.access_token);
+      if (!result.ok) {
+        setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
+        return;
+      }
+      window.location.href = '/';
+    }
   });
 }
 
@@ -143,3 +221,11 @@ if (supabaseClient) {
     refreshAuthUI();
   });
 }
+
+document.querySelectorAll('[data-auth-toggle]').forEach((toggle) => {
+  toggle.addEventListener('click', () => {
+    if (!authPasswordInput) return;
+    const isHidden = authPasswordInput.type === 'password';
+    authPasswordInput.type = isHidden ? 'text' : 'password';
+  });
+});
