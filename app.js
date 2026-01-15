@@ -1971,8 +1971,6 @@ if (authSignOut) {
     if (!supabaseClient) return;
     await supabaseClient.auth.signOut();
     await fetch('/api/logout', { method: 'POST' });
-    await refreshAuthUI();
-    setAuthStatus('Signed out on this device.');
     window.location.href = '/auth';
   });
 }
