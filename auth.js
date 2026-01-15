@@ -130,6 +130,7 @@ const handleAuthRoute = async () => {
 
   if (path.startsWith('/forget-password')) {
     showResetPanel('request');
+    setAuthStatus('');
     return;
   }
 
@@ -138,16 +139,20 @@ const handleAuthRoute = async () => {
     if (!tokenHash) return;
     isRecoveryFlow = true;
     setRecoveryPending(true);
+    showResetPanel('update');
     if (!supabaseClient) return;
+    setAuthStatus('Validating reset link...');
     const { error } = await supabaseClient.auth.verifyOtp({
       type: 'recovery',
       token_hash: tokenHash,
     });
     if (error) {
       setAuthStatus(error.message);
+      if (authResetUpdate) authResetUpdate.disabled = true;
       return;
     }
-    showResetPanel('update');
+    if (authResetUpdate) authResetUpdate.disabled = false;
+    setAuthStatus('');
   }
 };
 

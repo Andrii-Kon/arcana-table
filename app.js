@@ -1751,6 +1751,9 @@ const syncServerSession = async (accessToken) => {
 
 const refreshAuthUI = async () => {
   if (!authTrigger) return;
+  if (window.location.pathname.startsWith('/auth')) return;
+  if (window.location.pathname.startsWith('/forget-password')) return;
+  if (window.location.pathname.startsWith('/reset-password')) return;
   if (!supabaseClient) {
     authTrigger.textContent = 'Sign in';
     authTrigger.disabled = true;
