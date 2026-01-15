@@ -1792,8 +1792,7 @@ const refreshAuthUI = async () => {
     if (authDisplayEmail) authDisplayEmail.hidden = true;
     setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
-    document.body.classList.add('auth-locked');
-    openAuthModal();
+    window.location.href = '/auth';
   }
 };
 
@@ -1819,7 +1818,14 @@ const handleAuthRedirect = async () => {
 };
 
 const openAuthModal = () => {
-  if (!authModal) return;
+  if (!authModal) {
+    window.location.href = '/auth';
+    return;
+  }
+  if (!authTrigger || !authTrigger.classList.contains('is-authenticated')) {
+    window.location.href = '/auth';
+    return;
+  }
   setAuthStatus('');
   openModal(authModal);
 };
