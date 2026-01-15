@@ -250,6 +250,10 @@ def is_auth_allowed(path: str) -> bool:
         return True
     if path in ['/styles.css', '/config.js', '/auth.js', '/favicon.ico']:
         return True
+    if path == '/forget-password' or path.startswith('/forget-password/'):
+        return True
+    if path.startswith('/reset-password'):
+        return True
     if path.startswith('/assets'):
         return True
     if path.startswith('/api/session') or path.startswith('/api/logout'):
@@ -307,6 +311,17 @@ def serve_tarot_assets(path):
 @app.route('/auth', methods=['GET'])
 @app.route('/auth/', methods=['GET'])
 def serve_auth_page():
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
+@app.route('/forget-password', methods=['GET'])
+@app.route('/forget-password/', methods=['GET'])
+def serve_forgot_password_page():
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
+@app.route('/reset-password/<path:token>', methods=['GET'])
+def serve_reset_password_page(token):
     return send_from_directory(ROOT_DIR, 'auth.html')
 
 
