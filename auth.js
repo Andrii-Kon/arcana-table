@@ -2,6 +2,8 @@ const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 const SUPABASE_REDIRECT =
   window.SUPABASE_REDIRECT || `${window.location.origin}/auth/callback`;
+const SUPABASE_RESET_REDIRECT =
+  window.SUPABASE_RESET_REDIRECT || `${window.location.origin}/auth`;
 
 const authForm = document.getElementById('authForm');
 const authNameWrap = document.querySelector('[data-auth-name]');
@@ -377,7 +379,7 @@ if (authResetSend) {
     }
     setAuthStatus('Sending reset link...');
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: SUPABASE_REDIRECT,
+      redirectTo: SUPABASE_RESET_REDIRECT,
     });
     if (error) {
       setAuthStatus(error.message);

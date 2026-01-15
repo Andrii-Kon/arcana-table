@@ -1060,7 +1060,7 @@
           <div class="auth-card__header">
             <span class="auth-card__kicker">Magic link</span>
             <h2 id="authTitle" class="auth-card__title">Sign in</h2>
-            <p>We will email you a one-time link. No password needed.</p>
+            <p class="auth-card__note">We will email you a one-time link. No password needed.</p>
           </div>
 
           <form id="authForm" class="auth-form" novalidate>
@@ -1079,6 +1079,8 @@
 
           <div class="auth-status-row">
             <p id="authStatus" class="auth-status"></p>
+            <p id="authDisplayName" class="auth-identity" hidden></p>
+            <p id="authDisplayEmail" class="auth-identity" hidden></p>
           </div>
 
           <div class="auth-actions">
