@@ -125,6 +125,32 @@ const showResetPanel = (mode) => {
   }
 };
 
+const handleAuthRoute = async () => {
+  const path = window.location.pathname;
+
+  if (path.startsWith('/forget-password')) {
+    showResetPanel('request');
+    return;
+  }
+
+  if (path.startsWith('/reset-password/')) {
+    const tokenHash = path.split('/reset-password/')[1];
+    if (!tokenHash) return;
+    isRecoveryFlow = true;
+    setRecoveryPending(true);
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.auth.verifyOtp({
+      type: 'recovery',
+      token_hash: tokenHash,
+    });
+    if (error) {
+      setAuthStatus(error.message);
+      return;
+    }
+    showResetPanel('update');
+  }
+};
+
 const handleAuthRedirect = async () => {
   if (!supabaseClient) return;
   const currentUrl = window.location.href;
@@ -343,7 +369,9 @@ if (authForgot) {
 }
 
 if (supabaseClient) {
-  handleAuthRedirect().then(refreshAuthUI);
+  handleAuthRedirect()
+    .then(handleAuthRoute)
+    .then(refreshAuthUI);
   supabaseClient.auth.onAuthStateChange((event) => {
     if (event === 'PASSWORD_RECOVERY') {
       isRecoveryFlow = true;
@@ -353,6 +381,8 @@ if (supabaseClient) {
     }
     refreshAuthUI();
   });
+} else {
+  handleAuthRoute();
 }
 
 document.querySelectorAll('[data-auth-toggle]').forEach((toggle) => {
@@ -441,6 +471,7 @@ if (authResetUpdate) {
     setRecoveryPending(false);
     await supabaseClient.auth.signOut();
     if (setMode) setMode('signin');
+    window.location.href = '/auth';
   });
 }
 
@@ -456,5 +487,6 @@ if (authResetBack) {
       }
     }
     if (setMode) setMode('signin');
+    window.location.href = '/auth';
   });
 }
