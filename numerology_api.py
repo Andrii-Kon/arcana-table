@@ -185,6 +185,7 @@ CONFIG_JS = os.path.join(ROOT_DIR, 'config.js')
 AUTH_JS = os.path.join(ROOT_DIR, 'auth.js')
 
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
+SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '').strip()
 SUPABASE_JWKS_URL = os.getenv('SUPABASE_JWKS_URL', '').strip()
 if not SUPABASE_JWKS_URL and SUPABASE_URL:
     SUPABASE_JWKS_URL = SUPABASE_URL.rstrip('/') + '/auth/v1/keys'
@@ -208,6 +209,20 @@ def _get_jwks_client() -> PyJWKClient | None:
 def verify_access_token(token: str) -> bool:
     if not token:
         return False
+    if SUPABASE_URL and SUPABASE_ANON_KEY:
+        try:
+            response = requests.get(
+                SUPABASE_URL.rstrip('/') + '/auth/v1/user',
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'apikey': SUPABASE_ANON_KEY,
+                },
+                timeout=6,
+            )
+            if response.status_code == 200:
+                return True
+        except Exception:
+            pass
     client = _get_jwks_client()
     if not client:
         return False
