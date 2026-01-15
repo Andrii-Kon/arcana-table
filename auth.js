@@ -35,6 +35,27 @@ let authAction = 'signin';
 let pendingEmail = '';
 let setMode = null;
 let isRecoveryFlow = false;
+const RECOVERY_STORAGE_KEY = 'auth_recovery_pending';
+
+const setRecoveryPending = (value) => {
+  try {
+    if (value) {
+      sessionStorage.setItem(RECOVERY_STORAGE_KEY, '1');
+    } else {
+      sessionStorage.removeItem(RECOVERY_STORAGE_KEY);
+    }
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const isRecoveryPending = () => {
+  try {
+    return sessionStorage.getItem(RECOVERY_STORAGE_KEY) === '1';
+  } catch (error) {
+    return false;
+  }
+};
 
 const setAuthStatus = (message) => {
   if (!authStatus) return;
@@ -111,6 +132,7 @@ const handleAuthRedirect = async () => {
   const recoveryType = getRecoveryType();
   if (recoveryType === 'recovery') {
     isRecoveryFlow = true;
+    setRecoveryPending(true);
   }
 
   if (url.searchParams.get('code')) {
@@ -161,8 +183,9 @@ const refreshAuthUI = async () => {
   cachedSession = session || null;
 
   if (session?.user) {
-    if (isRecoveryFlow || getRecoveryType() === 'recovery') {
+    if (isRecoveryFlow || isRecoveryPending() || getRecoveryType() === 'recovery') {
       isRecoveryFlow = true;
+      setRecoveryPending(true);
       showResetPanel('update');
       return;
     }
@@ -322,6 +345,7 @@ if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((event) => {
     if (event === 'PASSWORD_RECOVERY') {
       isRecoveryFlow = true;
+      setRecoveryPending(true);
       showResetPanel('update');
       return;
     }
@@ -412,14 +436,23 @@ if (authResetUpdate) {
     if (authResetPassword) authResetPassword.value = '';
     if (authResetConfirm) authResetConfirm.value = '';
     isRecoveryFlow = false;
+    setRecoveryPending(false);
     await supabaseClient.auth.signOut();
     if (setMode) setMode('signin');
   });
 }
 
 if (authResetBack) {
-  authResetBack.addEventListener('click', () => {
+  authResetBack.addEventListener('click', async () => {
     isRecoveryFlow = false;
+    setRecoveryPending(false);
+    if (supabaseClient) {
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (error) {
+        // Ignore sign-out errors.
+      }
+    }
     if (setMode) setMode('signin');
   });
 }
