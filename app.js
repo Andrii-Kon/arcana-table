@@ -1699,6 +1699,7 @@ const supabaseClient =
         auth: {
           detectSessionInUrl: true,
           persistSession: true,
+          flowType: 'pkce',
         },
       })
     : null;
