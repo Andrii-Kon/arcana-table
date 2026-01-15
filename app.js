@@ -1,4 +1,17 @@
-const SPREADS = {
+const isAuthRoute = ['/auth', '/forget-password', '/reset-password'].some((route) =>
+  window.location.pathname.startsWith(route)
+);
+
+if (isAuthRoute) {
+  fetch('/auth', { credentials: 'same-origin' })
+    .then((response) => response.text())
+    .then((html) => {
+      document.open();
+      document.write(html);
+      document.close();
+    });
+} else {
+  const SPREADS = {
   three: {
     id: 'three',
     name: 'Past / Present / Future',
@@ -2071,4 +2084,5 @@ if (preludeModal) {
   if (!hashView || hashView === 'tarot') {
     openPreludeModal();
   }
+}
 }
