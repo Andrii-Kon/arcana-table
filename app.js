@@ -1853,6 +1853,7 @@ if (authSignOut) {
     await fetch('/api/logout', { method: 'POST' });
     await refreshAuthUI();
     setAuthStatus('Signed out.');
+    window.location.href = '/auth';
   });
 }
 
