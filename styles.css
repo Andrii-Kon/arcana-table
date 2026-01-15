@@ -610,6 +610,12 @@ body::before {
   padding: 6px 0 4px;
 }
 
+.auth-reset__panel {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
 .auth-reset__icon {
   width: 52px;
   height: 52px;
@@ -650,17 +656,12 @@ body::before {
 }
 
 .auth-status {
-  min-height: 1.2em;
   color: rgba(30, 26, 22, 0.7);
 }
 
 .auth-status-row {
   display: grid;
   gap: 6px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(30, 26, 22, 0.12);
-  background: rgba(255, 255, 255, 0.7);
 }
 
 .auth-identity {

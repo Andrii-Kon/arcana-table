@@ -1677,7 +1677,8 @@ const authCard = document.querySelector('.auth-card');
 const authForm = document.getElementById('authForm');
 const authEmailInput = document.getElementById('authEmail');
 const authStatus = document.getElementById('authStatus');
-const authIdentity = document.getElementById('authIdentity');
+const authDisplayName = document.getElementById('authDisplayName');
+const authDisplayEmail = document.getElementById('authDisplayEmail');
 const authSignOut = document.getElementById('authSignOut');
 const authPasswordInput = document.getElementById('authPassword');
 const authNameWrap = document.querySelector('[data-auth-name]');
@@ -1749,12 +1750,27 @@ const refreshAuthUI = async () => {
   } = await supabaseClient.auth.getSession();
 
   if (session?.user) {
-    const email = session.user.email || 'Signed in';
+    const email = session.user.email || '';
+    const fullName =
+      session.user.user_metadata?.full_name ||
+      session.user.user_metadata?.name ||
+      'Account';
     authTrigger.textContent = 'Account';
     authTrigger.classList.add('is-authenticated');
     if (authCard) authCard.classList.add('is-authenticated');
-    if (authIdentity) authIdentity.textContent = `Signed in as ${email}`;
-    setAuthStatus('You are signed in.');
+    if (authTitle) authTitle.textContent = 'Account';
+    document.querySelectorAll('.auth-switch').forEach((line) => {
+      line.hidden = true;
+    });
+    setAuthStatus('');
+    if (authDisplayName) {
+      authDisplayName.hidden = false;
+      authDisplayName.textContent = fullName;
+    }
+    if (authDisplayEmail) {
+      authDisplayEmail.hidden = false;
+      authDisplayEmail.textContent = email;
+    }
     if (authSignOut) authSignOut.hidden = false;
     syncServerSession(session.access_token);
     document.body.classList.remove('auth-locked');
@@ -1763,7 +1779,17 @@ const refreshAuthUI = async () => {
     authTrigger.textContent = 'Sign in';
     authTrigger.classList.remove('is-authenticated');
     if (authCard) authCard.classList.remove('is-authenticated');
-    if (authIdentity) authIdentity.textContent = 'Not signed in';
+    if (authTitle) authTitle.textContent = 'Login your account';
+    document.querySelectorAll('.auth-switch').forEach((line) => {
+      if (line.classList.contains('auth-switch--signup')) {
+        line.hidden = true;
+      }
+      if (line.classList.contains('auth-switch--signin')) {
+        line.hidden = false;
+      }
+    });
+    if (authDisplayName) authDisplayName.hidden = true;
+    if (authDisplayEmail) authDisplayEmail.hidden = true;
     setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
     document.body.classList.add('auth-locked');

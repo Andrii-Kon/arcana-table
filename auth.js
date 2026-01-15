@@ -9,29 +9,34 @@ const authNameInput = document.getElementById('authName');
 const authEmailInput = document.getElementById('authEmail');
 const authPasswordInput = document.getElementById('authPassword');
 const authStatus = document.getElementById('authStatus');
-const authIdentity = document.getElementById('authIdentity');
+const authDisplayName = document.getElementById('authDisplayName');
+const authDisplayEmail = document.getElementById('authDisplayEmail');
 const authHint = document.querySelector('[data-auth-hint]');
 const authTitle = document.getElementById('authTitle');
 const authVerify = document.getElementById('authVerify');
 const authVerifyEmail = document.getElementById('authVerifyEmail');
 const authResend = document.querySelector('[data-auth-resend]');
 const authReset = document.getElementById('authReset');
+const authResetTitle = document.getElementById('authResetTitle');
+const authResetText = document.getElementById('authResetText');
 const authResetEmail = document.getElementById('authResetEmail');
+const authResetPassword = document.getElementById('authResetPassword');
+const authResetConfirm = document.getElementById('authResetConfirm');
+const authResetPanels = document.querySelectorAll('[data-auth-reset-panel]');
+const authResetUpdate = document.querySelector('[data-auth-reset-update]');
 const authForgot = document.querySelector('[data-auth-forgot]');
 const authResetSend = document.querySelector('[data-auth-reset-send]');
+const authResetBack = document.querySelector('[data-auth-reset-back]');
 
 let cachedSession = null;
 let authAction = 'signin';
 let pendingEmail = '';
+let setMode = null;
+let isRecoveryFlow = false;
 
 const setAuthStatus = (message) => {
   if (!authStatus) return;
   authStatus.textContent = message || '';
-};
-
-const setIdentity = (message) => {
-  if (!authIdentity) return;
-  authIdentity.textContent = message || '';
 };
 
 const hasSupabaseConfig = () => {
@@ -65,14 +70,54 @@ const syncServerSession = async (accessToken) => {
   return { ok: response.ok };
 };
 
+const getRecoveryType = () => {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+  return url.searchParams.get('type') || hashParams.get('type') || '';
+};
+
+const showResetPanel = (mode) => {
+  if (authReset) authReset.hidden = false;
+  if (authForm) authForm.hidden = true;
+  if (authHint) authHint.hidden = true;
+  if (authVerify) authVerify.hidden = true;
+  document.querySelectorAll('.auth-switch').forEach((line) => {
+    line.hidden = true;
+  });
+  if (authTitle) authTitle.textContent = 'Reset your password';
+  if (authResetTitle) {
+    authResetTitle.textContent =
+      mode === 'update' ? 'Set a new password' : 'Reset your password';
+  }
+  if (authResetText) {
+    authResetText.textContent =
+      mode === 'update'
+        ? 'Enter a new password to finish resetting your account.'
+        : 'We will email you a link to reset your password.';
+  }
+  if (authResetPanels.length) {
+    authResetPanels.forEach((panel) => {
+      panel.hidden = panel.getAttribute('data-auth-reset-panel') !== mode;
+    });
+  }
+};
+
 const handleAuthRedirect = async () => {
   if (!supabaseClient) return;
   const currentUrl = window.location.href;
   const url = new URL(currentUrl);
+  const recoveryType = getRecoveryType();
+  if (recoveryType === 'recovery') {
+    isRecoveryFlow = true;
+  }
 
   if (url.searchParams.get('code')) {
     const { data, error } = await supabaseClient.auth.exchangeCodeForSession(currentUrl);
     if (!error && data?.session?.access_token) {
+      if (isRecoveryFlow) {
+        showResetPanel('update');
+        return;
+      }
       const result = await syncServerSession(data.session.access_token);
       if (!result.ok) {
         setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
@@ -87,6 +132,10 @@ const handleAuthRedirect = async () => {
     if (supabaseClient.auth.getSessionFromUrl) {
       const { data } = await supabaseClient.auth.getSessionFromUrl();
       if (data?.session?.access_token) {
+        if (isRecoveryFlow) {
+          showResetPanel('update');
+          return;
+        }
         const result = await syncServerSession(data.session.access_token);
         if (!result.ok) {
           setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
@@ -110,8 +159,28 @@ const refreshAuthUI = async () => {
   cachedSession = session || null;
 
   if (session?.user) {
-    setIdentity(`Signed in as ${session.user.email || 'Account'}`);
-    setAuthStatus('You are signed in on this device.');
+    if (isRecoveryFlow || getRecoveryType() === 'recovery') {
+      isRecoveryFlow = true;
+      showResetPanel('update');
+      return;
+    }
+    const fullName =
+      session.user.user_metadata?.full_name ||
+      session.user.user_metadata?.name ||
+      'Account';
+    if (authTitle) authTitle.textContent = 'Account';
+    document.querySelectorAll('.auth-switch').forEach((line) => {
+      line.hidden = true;
+    });
+    setAuthStatus('');
+    if (authDisplayName) {
+      authDisplayName.hidden = false;
+      authDisplayName.textContent = fullName;
+    }
+    if (authDisplayEmail) {
+      authDisplayEmail.hidden = false;
+      authDisplayEmail.textContent = session.user.email || '';
+    }
     const result = await syncServerSession(session.access_token);
     if (!result.ok) {
       setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
@@ -119,12 +188,22 @@ const refreshAuthUI = async () => {
     }
     window.location.href = '/';
   } else {
-    setIdentity('Not signed in');
+    if (authTitle) authTitle.textContent = 'Login your account';
+    document.querySelectorAll('.auth-switch').forEach((line) => {
+      if (line.classList.contains('auth-switch--signup')) {
+        line.hidden = true;
+      }
+      if (line.classList.contains('auth-switch--signin')) {
+        line.hidden = false;
+      }
+    });
+    if (authDisplayName) authDisplayName.hidden = true;
+    if (authDisplayEmail) authDisplayEmail.hidden = true;
   }
 };
 
 if (authForm) {
-  const setMode = (mode) => {
+  setMode = (mode) => {
     authAction = mode;
     const showName = mode === 'signup';
     if (authNameWrap) authNameWrap.hidden = !showName;
@@ -232,17 +311,18 @@ if (authForm) {
 
 if (authForgot) {
   authForgot.addEventListener('click', () => {
-    if (authReset) authReset.hidden = false;
-    if (authVerify) authVerify.hidden = true;
-    if (authForm) authForm.hidden = true;
-    if (authHint) authHint.hidden = true;
-    if (authTitle) authTitle.textContent = 'Reset your password';
+    showResetPanel('request');
   });
 }
 
 if (supabaseClient) {
   handleAuthRedirect().then(refreshAuthUI);
-  supabaseClient.auth.onAuthStateChange(() => {
+  supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      isRecoveryFlow = true;
+      showResetPanel('update');
+      return;
+    }
     refreshAuthUI();
   });
 }
@@ -252,6 +332,14 @@ document.querySelectorAll('[data-auth-toggle]').forEach((toggle) => {
     if (!authPasswordInput) return;
     const isHidden = authPasswordInput.type === 'password';
     authPasswordInput.type = isHidden ? 'text' : 'password';
+  });
+});
+
+document.querySelectorAll('[data-auth-toggle-reset]').forEach((toggle) => {
+  toggle.addEventListener('click', () => {
+    if (!authResetPassword) return;
+    const isHidden = authResetPassword.type === 'password';
+    authResetPassword.type = isHidden ? 'text' : 'password';
   });
 });
 
@@ -296,5 +384,40 @@ if (authResetSend) {
       return;
     }
     setAuthStatus('Password reset link sent. Check your email.');
+  });
+}
+
+if (authResetUpdate) {
+  authResetUpdate.addEventListener('click', async () => {
+    if (!supabaseClient) return;
+    const password = authResetPassword?.value || '';
+    const confirm = authResetConfirm?.value || '';
+    if (password.length < 8) {
+      setAuthStatus('Use at least 8 characters for your new password.');
+      return;
+    }
+    if (password !== confirm) {
+      setAuthStatus('Passwords do not match.');
+      return;
+    }
+    setAuthStatus('Updating your password...');
+    const { error } = await supabaseClient.auth.updateUser({ password });
+    if (error) {
+      setAuthStatus(error.message);
+      return;
+    }
+    setAuthStatus('Password updated. Please sign in.');
+    if (authResetPassword) authResetPassword.value = '';
+    if (authResetConfirm) authResetConfirm.value = '';
+    isRecoveryFlow = false;
+    await supabaseClient.auth.signOut();
+    if (setMode) setMode('signin');
+  });
+}
+
+if (authResetBack) {
+  authResetBack.addEventListener('click', () => {
+    isRecoveryFlow = false;
+    if (setMode) setMode('signin');
   });
 }

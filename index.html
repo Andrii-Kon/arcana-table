@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arcana Table</title>
     <base href="/" />
-    <link rel="stylesheet" href="styles.css?v=20260116" />
+    <link rel="stylesheet" href="styles.css?v=20260115" />
   </head>
   <body>
     <main class="page">
@@ -1058,38 +1058,12 @@
       <div class="modal__dialog" role="document">
         <div class="auth-card">
           <div class="auth-card__header">
-            <div class="auth-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" role="img" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="currentColor" opacity="0.12"></circle>
-                <path
-                  d="M24 14.5a6 6 0 1 1 0 12a6 6 0 0 1 0-12Zm0 14.8c5.7 0 10.8 2.8 13.7 7.2c.3.5.2 1.1-.2 1.5c-3.5 3.1-8.2 5-13.5 5s-10-1.9-13.5-5c-.4-.4-.5-1-.2-1.5c2.9-4.4 8-7.2 13.7-7.2Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
-            </div>
-            <h2 id="authTitle" class="auth-card__title">Login your account</h2>
-            <p class="auth-switch auth-switch--signin">
-              Don't have an account?
-              <button type="button" class="auth-link" data-auth-mode="signup">Sign up</button>
-            </p>
-            <p class="auth-switch auth-switch--signup" hidden>
-              Already have an account?
-              <button type="button" class="auth-link" data-auth-mode="signin">Login</button>
-            </p>
+            <span class="auth-card__kicker">Magic link</span>
+            <h2 id="authTitle" class="auth-card__title">Sign in</h2>
+            <p>We will email you a one-time link. No password needed.</p>
           </div>
 
           <form id="authForm" class="auth-form" novalidate>
-            <div class="auth-name-row" data-auth-name hidden>
-              <label class="auth-label" for="authName">Your name</label>
-              <input
-                id="authName"
-                class="auth-input"
-                type="text"
-                name="name"
-                autocomplete="name"
-                placeholder="Enter your name"
-              />
-            </div>
             <label class="auth-label" for="authEmail">Email</label>
             <input
               id="authEmail"
@@ -1097,98 +1071,14 @@
               type="email"
               name="email"
               autocomplete="email"
-              placeholder="Enter your email address"
+              placeholder="you@example.com"
               required
             />
-            <label class="auth-label" for="authPassword">Password</label>
-            <div class="auth-password">
-              <input
-                id="authPassword"
-                class="auth-input"
-                type="password"
-                name="password"
-                autocomplete="current-password"
-                placeholder="Enter your password"
-                required
-              />
-              <button class="auth-password__toggle" type="button" data-auth-toggle>
-                <span class="sr-only">Toggle password</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M12 5c4.8 0 8.9 3 10.5 7.2c.1.3.1.6 0 .8C20.9 17 16.8 20 12 20S3.1 17 1.5 13c-.1-.3-.1-.6 0-.8C3.1 8 7.2 5 12 5Zm0 2C8.5 7 5.3 9.1 3.7 12c1.6 2.9 4.8 5 8.3 5s6.7-2.1 8.3-5C18.7 9.1 15.5 7 12 7Zm0 2.5A2.5 2.5 0 1 1 12 14a2.5 2.5 0 0 1 0-5Z"
-                    fill="currentColor"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-            <p class="auth-hint" data-auth-hint hidden>
-              Use 8 or more characters with a mix of letters, numbers &amp; symbols.
-            </p>
-            <button class="primary-btn auth-submit" type="submit">Login</button>
-            <button class="auth-link auth-forgot" type="button" data-auth-forgot>Forgot Password?</button>
+            <button class="primary-btn auth-submit" type="submit">Send magic link</button>
           </form>
-
-          <div class="auth-verify" id="authVerify" hidden>
-            <div class="auth-verify__icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="24" fill="currentColor" opacity="0.12"></circle>
-                <path
-                  d="M10 16.5h28a3 3 0 0 1 3 3V31a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V19.5a3 3 0 0 1 3-3Zm0 2.5 14 8 14-8"
-                  fill="currentColor"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="auth-verify__title">Verify your email</h2>
-            <p class="auth-verify__text">
-              We have sent a verification link to
-              <strong id="authVerifyEmail">your email</strong>.
-            </p>
-            <p class="auth-verify__text muted">
-              Click the link to complete verification. Check spam if you don’t see it.
-            </p>
-            <button class="primary-btn auth-verify__action" type="button" data-auth-resend>
-              Resend verification link
-            </button>
-            <p class="auth-verify__footer">
-              Try another email?
-              <button type="button" class="auth-link" data-auth-mode="signin">Go to Login</button>
-            </p>
-          </div>
-
-          <div class="auth-reset" id="authReset" hidden>
-            <div class="auth-reset__icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="24" fill="currentColor" opacity="0.12"></circle>
-                <path
-                  d="M12 17.5h24a3 3 0 0 1 3 3V30a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3v-9.5a3 3 0 0 1 3-3Zm12 4.5a4 4 0 1 0 0 8a4 4 0 0 0 0-8Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="auth-reset__title">Reset your password</h2>
-            <p class="auth-reset__text">
-              Type in your registered email address to reset password.
-            </p>
-            <label class="auth-label" for="authResetEmail">Your email</label>
-            <input
-              id="authResetEmail"
-              class="auth-input"
-              type="email"
-              name="resetEmail"
-              autocomplete="email"
-              placeholder="Enter your email address"
-            />
-            <button class="primary-btn auth-reset__action" type="button" data-auth-reset-send>
-              Send verification link
-            </button>
-            <button class="secondary-btn auth-reset__back" type="button" data-auth-mode="signin">
-              Back to Login
-            </button>
-          </div>
 
           <div class="auth-status-row">
             <p id="authStatus" class="auth-status"></p>
-            <p id="authIdentity" class="auth-identity">Not signed in</p>
           </div>
 
           <div class="auth-actions">
@@ -1201,9 +1091,9 @@
 
     <script src="data/cards.js"></script>
     <script src="data/personalized_interpretations.generated.js"></script>
-    <script src="config.js?v=20260116"></script>
+    <script src="config.js?v=20260115"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=20260116"></script>
+    <script src="app.js?v=20260115"></script>
     <script src="numerology_static/app.js"></script>
     <script src="palmistry_static/app.js"></script>
   </body>

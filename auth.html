@@ -81,6 +81,76 @@
           <button class="auth-link auth-forgot" type="button" data-auth-forgot>Forgot Password?</button>
         </form>
 
+        <div id="authReset" class="auth-reset" hidden>
+          <div class="auth-reset__icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="24" fill="currentColor" opacity="0.12"></circle>
+              <path
+                d="M24 13a7 7 0 0 1 7 7v4h1.5a2.5 2.5 0 0 1 2.5 2.5v8a2.5 2.5 0 0 1-2.5 2.5h-17A2.5 2.5 0 0 1 13 34.5v-8A2.5 2.5 0 0 1 15.5 24H17v-4a7 7 0 0 1 7-7Zm0 4a3 3 0 0 0-3 3v4h6v-4a3 3 0 0 0-3-3Z"
+                fill="currentColor"
+              ></path>
+            </svg>
+          </div>
+          <h2 id="authResetTitle" class="auth-reset__title">Reset your password</h2>
+          <p id="authResetText" class="auth-reset__text">
+            We will email you a link to reset your password.
+          </p>
+
+          <div class="auth-reset__panel" data-auth-reset-panel="request">
+            <label class="auth-label" for="authResetEmail">Email</label>
+            <input
+              id="authResetEmail"
+              class="auth-input"
+              type="email"
+              name="resetEmail"
+              autocomplete="email"
+              placeholder="Enter your email address"
+            />
+            <button class="primary-btn auth-reset__action" type="button" data-auth-reset-send>
+              Send reset link
+            </button>
+          </div>
+
+          <div class="auth-reset__panel" data-auth-reset-panel="update" hidden>
+            <label class="auth-label" for="authResetPassword">New password</label>
+            <div class="auth-password">
+              <input
+                id="authResetPassword"
+                class="auth-input"
+                type="password"
+                name="newPassword"
+                autocomplete="new-password"
+                placeholder="Create a new password"
+              />
+              <button class="auth-password__toggle" type="button" data-auth-toggle-reset>
+                <span class="sr-only">Toggle password</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 5c4.8 0 8.9 3 10.5 7.2c.1.3.1.6 0 .8C20.9 17 16.8 20 12 20S3.1 17 1.5 13c-.1-.3-.1-.6 0-.8C3.1 8 7.2 5 12 5Zm0 2C8.5 7 5.3 9.1 3.7 12c1.6 2.9 4.8 5 8.3 5s6.7-2.1 8.3-5C18.7 9.1 15.5 7 12 7Zm0 2.5A2.5 2.5 0 1 1 12 14a2.5 2.5 0 0 1 0-5Z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+            <label class="auth-label" for="authResetConfirm">Confirm password</label>
+            <input
+              id="authResetConfirm"
+              class="auth-input"
+              type="password"
+              name="confirmPassword"
+              autocomplete="new-password"
+              placeholder="Repeat your new password"
+            />
+            <button class="primary-btn auth-reset__action" type="button" data-auth-reset-update>
+              Update password
+            </button>
+          </div>
+
+          <button class="auth-link auth-reset__back" type="button" data-auth-reset-back>
+            Back to login
+          </button>
+        </div>
+
         <div class="auth-verify" id="authVerify" hidden>
           <div class="auth-verify__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48">
@@ -108,40 +178,8 @@
           </p>
         </div>
 
-        <div class="auth-reset" id="authReset" hidden>
-          <div class="auth-reset__icon" aria-hidden="true">
-            <svg viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="24" fill="currentColor" opacity="0.12"></circle>
-              <path
-                d="M12 17.5h24a3 3 0 0 1 3 3V30a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3v-9.5a3 3 0 0 1 3-3Zm12 4.5a4 4 0 1 0 0 8a4 4 0 0 0 0-8Z"
-                fill="currentColor"
-              ></path>
-            </svg>
-          </div>
-          <h2 class="auth-reset__title">Reset your password</h2>
-          <p class="auth-reset__text">
-            Type in your registered email address to reset password.
-          </p>
-          <label class="auth-label" for="authResetEmail">Your email</label>
-          <input
-            id="authResetEmail"
-            class="auth-input"
-            type="email"
-            name="resetEmail"
-            autocomplete="email"
-            placeholder="Enter your email address"
-          />
-          <button class="primary-btn auth-reset__action" type="button" data-auth-reset-send>
-            Send verification link
-          </button>
-          <button class="secondary-btn auth-reset__back" type="button" data-auth-mode="signin">
-            Back to Login
-          </button>
-        </div>
-
         <div class="auth-status-row">
           <p id="authStatus" class="auth-status"></p>
-          <p id="authIdentity" class="auth-identity">Not signed in</p>
         </div>
       </div>
     </main>
