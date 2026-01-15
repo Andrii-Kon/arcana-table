@@ -1673,6 +1673,7 @@ if (dailyTrigger) {
 
 const authModal = document.getElementById('authModal');
 const authTrigger = document.getElementById('authTrigger');
+const authCard = document.querySelector('.auth-card');
 const authForm = document.getElementById('authForm');
 const authEmailInput = document.getElementById('authEmail');
 const authStatus = document.getElementById('authStatus');
@@ -1726,12 +1727,16 @@ const refreshAuthUI = async () => {
     const email = session.user.email || 'Signed in';
     authTrigger.textContent = 'Account';
     authTrigger.classList.add('is-authenticated');
-    if (authIdentity) authIdentity.textContent = email;
+    if (authCard) authCard.classList.add('is-authenticated');
+    if (authIdentity) authIdentity.textContent = `Signed in as ${email}`;
+    setAuthStatus('You are signed in.');
     if (authSignOut) authSignOut.hidden = false;
   } else {
     authTrigger.textContent = 'Sign in';
     authTrigger.classList.remove('is-authenticated');
+    if (authCard) authCard.classList.remove('is-authenticated');
     if (authIdentity) authIdentity.textContent = 'Not signed in';
+    setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
   }
 };

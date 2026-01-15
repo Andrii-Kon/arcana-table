@@ -994,7 +994,7 @@
             <div class="auth-card__header">
               <span class="auth-card__kicker">Magic link</span>
               <h2 id="authTitle" class="auth-card__title">Sign in</h2>
-              <p>We will email you a secure link to sign in.</p>
+              <p>We will email you a one-time link. No password needed.</p>
             </div>
 
             <form id="authForm" class="auth-form" novalidate>
@@ -1008,20 +1008,17 @@
                 placeholder="you@example.com"
                 required
               />
-              <button class="primary-btn" type="submit">Send magic link</button>
+              <button class="primary-btn auth-submit" type="submit">Send magic link</button>
             </form>
 
-            <p id="authStatus" class="auth-status"></p>
+            <div class="auth-status-row">
+              <p id="authStatus" class="auth-status"></p>
+              <p id="authIdentity" class="auth-identity">Not signed in</p>
+            </div>
 
-            <div class="auth-footer">
-              <div class="auth-identity">
-                <span class="auth-label">Status</span>
-                <span id="authIdentity">Not signed in</span>
-              </div>
-              <div class="auth-actions">
-                <button id="authSignOut" class="secondary-btn" type="button" hidden>Sign out</button>
-                <button class="secondary-btn" type="button" data-auth-close>Close</button>
-              </div>
+            <div class="auth-actions">
+              <button id="authSignOut" class="secondary-btn" type="button" hidden>Sign out</button>
+              <button class="secondary-btn" type="button" data-auth-close>Close</button>
             </div>
           </div>
         </div>
