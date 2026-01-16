@@ -5,42 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arcana Table</title>
     <base href="/" />
-    <link rel="stylesheet" href="styles.css?v=20260115" />
+    <link rel="stylesheet" href="styles.css?v=20260116" />
+    <link rel="stylesheet" href="magic-layer.css?v=20260116-3" />
   </head>
   <body>
     <main class="page">
       <header class="topbar">
         <button
-          id="dailyCardTrigger"
-          class="daily-trigger"
+          id="mobileMenuToggle"
+          class="mobile-menu-toggle"
           type="button"
-          aria-haspopup="dialog"
-          aria-controls="dailyCardModal"
+          aria-label="Open menu"
+          aria-controls="siteNav"
+          aria-expanded="false"
         >
-          <span class="daily-trigger__title">Daily card</span>
-          <span class="daily-trigger__subtitle">Click to reveal</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
         </button>
 
-        <nav class="site-nav" aria-label="Site">
-          <button class="site-link is-active" type="button" data-view="tarot" aria-pressed="true">
-            Tarot
-          </button>
-          <button class="site-link" type="button" data-view="numerology" aria-pressed="false">
-            Numerology
-          </button>
-          <button class="site-link" type="button" data-view="palmistry" aria-pressed="false">
-            Palmistry
-          </button>
-          <button
-            id="authTrigger"
-            class="auth-trigger"
-            type="button"
-            aria-haspopup="dialog"
-            aria-controls="authModal"
-            data-auth-open
-          >
-            Sign in
-          </button>
+        <nav id="siteNav" class="site-nav" aria-label="Site">
+          <div class="site-nav__left">
+            <button
+              class="daily-trigger menu-item"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="dailyCardModal"
+              data-daily-trigger
+            >
+              <span class="daily-trigger__title">Daily card</span>
+              <span class="daily-trigger__subtitle">Click to reveal</span>
+            </button>
+
+            <button
+              class="magic-trigger menu-item"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="magicModal"
+              data-magic-trigger
+            >
+              <span class="magic-trigger__title">Magic layer</span>
+              <span class="magic-trigger__subtitle">Shake to answer</span>
+            </button>
+          </div>
+
+          <div class="site-nav__center">
+            <button class="site-link is-active" type="button" data-view="tarot" aria-pressed="true">
+              Tarot
+            </button>
+            <button class="site-link" type="button" data-view="numerology" aria-pressed="false">
+              Numerology
+            </button>
+            <button class="site-link" type="button" data-view="palmistry" aria-pressed="false">
+              Palmistry
+            </button>
+          </div>
+
+          <div class="site-nav__right">
+            <button
+              id="authTrigger"
+              class="auth-trigger"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="authModal"
+              data-auth-open
+            >
+              Sign in
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -987,6 +1019,49 @@
         </div>
       </div>
 
+      <div id="magicModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="magicTitle" hidden>
+        <div class="modal__overlay" data-magic-close></div>
+        <div class="modal__dialog" role="document">
+          <div class="magic-layer">
+            <div class="magic-layer__header">
+              <span class="magic-layer__kicker">Magic layer</span>
+              <h2 id="magicTitle" class="magic-layer__title">Shake for an answer</h2>
+              <p class="magic-layer__subtitle">
+                Hold a clear question, then shake your phone or tap the orb.
+              </p>
+            </div>
+
+            <div
+              id="magicOrb"
+              class="magic-layer__orb"
+              role="button"
+              tabindex="0"
+              aria-describedby="magicStatus"
+            >
+              <div class="magic-layer__orb-glow" aria-hidden="true"></div>
+              <div id="magicOrb3d" class="magic-layer__orb-3d" aria-hidden="true"></div>
+              <div class="magic-layer__orb-core" aria-hidden="true"></div>
+              <div id="magicAnswerBox" class="magic-layer__answer" aria-hidden="true">
+                <div class="magic-layer__answer-outline" aria-hidden="true"></div>
+                <div id="magicAnswerLines" class="magic-layer__answer-lines"></div>
+              </div>
+            </div>
+
+            <p id="magicStatus" class="magic-layer__status" aria-live="polite">
+              Shake your phone or tap the orb to reveal a message.
+            </p>
+            <div id="magicAnswerLive" class="sr-only" aria-live="polite"></div>
+
+            <div class="magic-layer__actions">
+              <button id="magicEnableMotion" class="secondary-btn" type="button" hidden>
+                Enable motion
+              </button>
+              <button class="secondary-btn" type="button" data-magic-close>Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="preludeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="preludeTitle" hidden>
         <div class="modal__overlay" data-modal-close></div>
         <div class="modal__dialog" role="document">
@@ -1078,7 +1153,8 @@
     <script src="data/personalized_interpretations.generated.js"></script>
     <script src="config.js?v=20260115"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=20260115"></script>
+    <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
+    <script src="app.js?v=20260116-8"></script>
     <script src="numerology_static/app.js"></script>
     <script src="palmistry_static/app.js"></script>
   </body>

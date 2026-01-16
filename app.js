@@ -1566,7 +1566,7 @@ const getDailyCardData = () => {
 };
 
 const dailyModal = document.getElementById('dailyCardModal');
-const dailyTrigger = document.getElementById('dailyCardTrigger');
+const dailyTriggers = Array.from(document.querySelectorAll('[data-daily-trigger]'));
 
 const dailyCardDate = document.getElementById('dailyCardDate');
 const dailyCardImage = document.getElementById('dailyCardImage');
@@ -1672,15 +1672,739 @@ const hasSeenDaily = () => {
   }
 };
 
-if (dailyTrigger) {
+if (dailyTriggers.length) {
   if (!hasSeenDaily()) {
-    dailyTrigger.classList.add('daily-trigger--attention');
+    dailyTriggers.forEach((trigger) => trigger.classList.add('daily-trigger--attention'));
   }
 
-  dailyTrigger.addEventListener('click', () => {
-    markDailySeen();
-    dailyTrigger.classList.remove('daily-trigger--attention');
-    openDailyModal();
+  dailyTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      markDailySeen();
+      dailyTriggers.forEach((item) => item.classList.remove('daily-trigger--attention'));
+      openDailyModal();
+    });
+  });
+}
+
+const MAGIC_RESPONSES = [
+  'Yes, but give it time.',
+  'No, and that is protection.',
+  'Lean into the next step.',
+  'Trust your instinct.',
+  'Wait for clearer signals.',
+  'A small yes opens a bigger door.',
+  'Choose the simpler path.',
+  'Now is not the moment.',
+  'Ask again after you rest.',
+  'Follow the spark, ignore the noise.',
+  'The answer is already near.',
+  'Let it unfold without force.',
+  'A shift is underway.',
+  'Release what is heavy.',
+  'Move gently, but move.',
+  'Protect your energy first.',
+  'A helpful ally appears soon.',
+  'You already know the answer.',
+  'Say no to protect the yes.',
+  'This is a good omen.',
+  'A pause will reveal more.',
+  'Listen, then act.',
+  'Take the risk with care.',
+  'Begin with the smallest action.',
+];
+
+const MAGIC_DEFAULT_ANSWER = 'Focus your question.';
+const MAGIC_DEFAULT_STATUS = 'Shake your phone or tap the orb to reveal a message.';
+const MAGIC_SHAKE_THRESHOLD = 18;
+const MAGIC_SHAKE_COOLDOWN = 900;
+const MAGIC_REVEAL_DELAY = 520;
+const MAGIC_PENDING_STATUS = 'The orb is listening...';
+
+const magicModal = document.getElementById('magicModal');
+const magicTriggers = Array.from(document.querySelectorAll('[data-magic-trigger]'));
+const magicOrb = document.getElementById('magicOrb');
+const magicOrb3d = document.getElementById('magicOrb3d');
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const siteNav = document.getElementById('siteNav');
+const magicAnswerBox = document.getElementById('magicAnswerBox');
+const magicAnswerLines = document.getElementById('magicAnswerLines');
+const magicAnswerLive = document.getElementById('magicAnswerLive');
+const magicStatus = document.getElementById('magicStatus');
+const magicReset = document.getElementById('magicReset');
+const magicEnableMotion = document.getElementById('magicEnableMotion');
+
+let magicMotionActive = false;
+let lastMagicShake = 0;
+let lastMagicAccel = null;
+let magicRevealTimer = null;
+let magicAnswerResizeRaf = null;
+let magicAnswerMeasure = null;
+let magicOrb3dState = null;
+
+const MAGIC_TRIANGLE_METRICS = {
+  topRatio: 0.04,
+  baseRatio: 0.92,
+  baseWidthRatio: 0.84,
+};
+
+const getMagicBoxMetrics = () => {
+  if (!magicAnswerBox) return null;
+  const rect = magicAnswerBox.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  return {
+    width: rect.width,
+    height: rect.height,
+  };
+};
+
+const initMagicOrb3d = () => {
+  if (!magicOrb3d || !window.THREE) return;
+  if (magicOrb3dState) return;
+  const renderer = new window.THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  magicOrb3d.appendChild(renderer.domElement);
+
+  const scene = new window.THREE.Scene();
+  const camera = new window.THREE.PerspectiveCamera(35, 1, 0.1, 100);
+  camera.position.z = 3.2;
+
+  const geometry = new window.THREE.SphereGeometry(1, 64, 64);
+  const material = new window.THREE.MeshPhysicalMaterial({
+    color: 0x3a3562,
+    roughness: 0.35,
+    metalness: 0.08,
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.2,
+    transmission: 0.06,
+    thickness: 1.1,
+  });
+  const mesh = new window.THREE.Mesh(geometry, material);
+  scene.add(mesh);
+
+  const ambient = new window.THREE.AmbientLight(0xffffff, 0.55);
+  const key = new window.THREE.DirectionalLight(0xffffff, 0.9);
+  key.position.set(2.2, 2.8, 4);
+  const rim = new window.THREE.PointLight(0x7a66b6, 0.65);
+  rim.position.set(-3, -2, 2);
+  scene.add(ambient, key, rim);
+
+  magicOrb3dState = {
+    renderer,
+    scene,
+    camera,
+    mesh,
+    rafId: null,
+    lastTime: 0,
+    spinUntil: 0,
+  };
+  resizeMagicOrb3d();
+  renderMagicOrb3d();
+};
+
+const resizeMagicOrb3d = () => {
+  if (!magicOrb3dState || !magicOrb3d) return;
+  const rect = magicOrb3d.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  magicOrb3dState.renderer.setSize(rect.width, rect.height, false);
+  magicOrb3dState.camera.aspect = rect.width / rect.height;
+  magicOrb3dState.camera.updateProjectionMatrix();
+  renderMagicOrb3d();
+};
+
+const renderMagicOrb3d = () => {
+  if (!magicOrb3dState) return;
+  magicOrb3dState.renderer.render(magicOrb3dState.scene, magicOrb3dState.camera);
+};
+
+const pulseMagicOrb3d = (duration = 700) => {
+  initMagicOrb3d();
+  if (!magicOrb3dState) return;
+  magicOrb3dState.spinUntil = Math.max(
+    magicOrb3dState.spinUntil,
+    (window.performance?.now() || Date.now()) + duration
+  );
+  if (magicOrb3dState.rafId) return;
+  const animate = (time) => {
+    if (!magicOrb3dState) return;
+    const now = time || Date.now();
+    const delta = magicOrb3dState.lastTime ? now - magicOrb3dState.lastTime : 16;
+    magicOrb3dState.lastTime = now;
+    if (now <= magicOrb3dState.spinUntil) {
+      const speed = 0.0022;
+      magicOrb3dState.mesh.rotation.y += speed * delta;
+      magicOrb3dState.mesh.rotation.x += speed * 0.4 * delta;
+      renderMagicOrb3d();
+      magicOrb3dState.rafId = window.requestAnimationFrame(animate);
+      return;
+    }
+    magicOrb3dState.rafId = null;
+    magicOrb3dState.lastTime = 0;
+    renderMagicOrb3d();
+  };
+  magicOrb3dState.rafId = window.requestAnimationFrame(animate);
+};
+
+const stopMagicOrb3d = () => {
+  if (!magicOrb3dState) return;
+  if (magicOrb3dState.rafId) {
+    window.cancelAnimationFrame(magicOrb3dState.rafId);
+  }
+  magicOrb3dState.rafId = null;
+  magicOrb3dState.lastTime = 0;
+  magicOrb3dState.spinUntil = 0;
+};
+
+const ensureMagicAnswerMetrics = () => {
+  if (!magicAnswerLines) return;
+  const prevFontSize = magicAnswerLines.style.fontSize;
+  const prevLetterSpacing = magicAnswerLines.style.letterSpacing;
+  if (prevFontSize) magicAnswerLines.style.fontSize = '';
+  if (prevLetterSpacing) magicAnswerLines.style.letterSpacing = '';
+
+  const style = window.getComputedStyle(magicAnswerLines);
+  const fontKey = `${style.fontStyle}|${style.fontWeight}|${style.fontFamily}|${style.fontSize}|${style.letterSpacing}|${style.lineHeight}`;
+  if (magicAnswerMeasure && magicAnswerMeasure.fontKey === fontKey) {
+    if (prevFontSize) magicAnswerLines.style.fontSize = prevFontSize;
+    if (prevLetterSpacing) magicAnswerLines.style.letterSpacing = prevLetterSpacing;
+    return;
+  }
+
+  const baseSizePx = parseFloat(style.fontSize) || 0;
+  const baseSpacingPx = style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing) || 0;
+  const lineHeightPx = parseFloat(style.lineHeight) || (baseSizePx ? baseSizePx * 1.3 : 16);
+  const lineHeightRatio = baseSizePx ? Math.max(1.3, lineHeightPx / baseSizePx) : 1.3;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  magicAnswerMeasure = {
+    baseSizePx,
+    baseSpacingPx,
+    lineHeightRatio,
+    fontFamily: style.fontFamily,
+    fontWeight: style.fontWeight || '400',
+    fontStyle: style.fontStyle || 'normal',
+    fontKey,
+    ctx,
+  };
+
+  if (prevFontSize) magicAnswerLines.style.fontSize = prevFontSize;
+  if (prevLetterSpacing) magicAnswerLines.style.letterSpacing = prevLetterSpacing;
+};
+
+const getMagicAnswerText = () => {
+  if (!magicAnswerLines) return '';
+  if (magicAnswerLines.dataset.magicText !== undefined) {
+    return magicAnswerLines.dataset.magicText;
+  }
+  return magicAnswerLines.textContent || '';
+};
+
+const setMagicAnswerText = (text) => {
+  if (!magicAnswerLines) return;
+  magicAnswerLines.dataset.magicText = text;
+  if (magicAnswerLive) magicAnswerLive.textContent = text;
+};
+
+const measureMagicTextWidthPx = (text, fontSizePx, letterSpacingPx) => {
+  if (!magicAnswerMeasure || !magicAnswerMeasure.ctx) return 0;
+  const ctx = magicAnswerMeasure.ctx;
+  ctx.font = `${magicAnswerMeasure.fontStyle} ${magicAnswerMeasure.fontWeight} ${fontSizePx}px ${magicAnswerMeasure.fontFamily}`;
+  const width = ctx.measureText(text).width;
+  const spacing = letterSpacingPx ? letterSpacingPx * Math.max(0, text.length - 1) : 0;
+  return width + spacing;
+};
+
+const computeMagicLetterSpacingPx = (fontSizePx) => {
+  if (!magicAnswerMeasure) return 0;
+  const { baseSizePx, baseSpacingPx } = magicAnswerMeasure;
+  if (!baseSizePx || !baseSpacingPx) return 0;
+  const ratio = Math.min(1, fontSizePx / baseSizePx);
+  return baseSpacingPx * ratio;
+};
+
+const getTriangleMetrics = (boxWidth, boxHeight) => {
+  const top = boxHeight * MAGIC_TRIANGLE_METRICS.topRatio;
+  const base = boxHeight * MAGIC_TRIANGLE_METRICS.baseRatio;
+  return {
+    top,
+    base,
+    height: base - top,
+    baseWidth: boxWidth * MAGIC_TRIANGLE_METRICS.baseWidthRatio,
+  };
+};
+
+const getTriangleWidthAtY = (centerY, metrics) => {
+  if (centerY <= metrics.top || centerY >= metrics.base) return 0;
+  const t = (centerY - metrics.top) / metrics.height;
+  return metrics.baseWidth * t;
+};
+
+// Wraps words into line boxes that fit inside the triangle at each line's vertical band.
+const wrapMagicAnswerLines = (text, fontSizePx, letterSpacingPx, lineHeightPx, boxWidth, boxHeight) => {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (!words.length || !boxWidth || !boxHeight) return null;
+
+  const metrics = getTriangleMetrics(boxWidth, boxHeight);
+  const availableHeight = metrics.height;
+  const maxLines = Math.max(1, Math.floor(availableHeight / lineHeightPx));
+  const spaceWidth = measureMagicTextWidthPx(' ', fontSizePx, letterSpacingPx);
+  const gutter = Math.max(6, fontSizePx * 0.4);
+  const safeWidthAt = (centerY) => Math.max(0, getTriangleWidthAtY(centerY, metrics) - gutter);
+  const minOffsetForWidth = (lineIndex, width) => {
+    const neededWidth = width + gutter;
+    const requiredY = metrics.top + (neededWidth / metrics.baseWidth) * metrics.height;
+    return requiredY - metrics.top - (lineIndex + 0.5) * lineHeightPx;
+  };
+
+  const buildLines = (topOffset) => {
+    const lines = [];
+    let current = '';
+    let currentWidth = 0;
+    let lineIndex = 0;
+
+    for (const word of words) {
+      const wordUpper = word.toUpperCase();
+      const wordWidth = measureMagicTextWidthPx(wordUpper, fontSizePx, letterSpacingPx);
+      const centerY = metrics.top + topOffset + (lineIndex + 0.5) * lineHeightPx;
+      const allowedWidth = safeWidthAt(centerY);
+      if (!current) {
+        if (wordWidth > allowedWidth) {
+          return { lines: null, requiredOffset: minOffsetForWidth(lineIndex, wordWidth) };
+        }
+        current = wordUpper;
+        currentWidth = wordWidth;
+        continue;
+      }
+      const candidateWidth = currentWidth + spaceWidth + wordWidth;
+      if (candidateWidth <= allowedWidth) {
+        current = `${current} ${wordUpper}`;
+        currentWidth = candidateWidth;
+        continue;
+      }
+      lines.push({ text: current, width: currentWidth });
+      lineIndex += 1;
+      if (lineIndex >= maxLines) {
+        return { lines: null, requiredOffset: Number.POSITIVE_INFINITY };
+      }
+      const nextCenterY = metrics.top + topOffset + (lineIndex + 0.5) * lineHeightPx;
+      const nextAllowedWidth = safeWidthAt(nextCenterY);
+      if (wordWidth > nextAllowedWidth) {
+        return { lines: null, requiredOffset: minOffsetForWidth(lineIndex, wordWidth) };
+      }
+      current = wordUpper;
+      currentWidth = wordWidth;
+    }
+
+    if (current) lines.push({ text: current, width: currentWidth });
+    return { lines, requiredOffset: topOffset };
+  };
+
+  let topOffset = 0;
+  let lines = null;
+  for (let i = 0; i < 6; i += 1) {
+    const result = buildLines(topOffset);
+    if (!result) return null;
+    if (!result.lines) {
+      if (!Number.isFinite(result.requiredOffset)) return null;
+      const nextOffset = Math.max(topOffset, result.requiredOffset);
+      if (nextOffset <= topOffset + 0.1) return null;
+      topOffset = nextOffset;
+      continue;
+    }
+    lines = result.lines;
+    const centeredOffset = Math.max(0, (availableHeight - lines.length * lineHeightPx) / 2);
+    topOffset = Math.max(topOffset, centeredOffset);
+    break;
+  }
+
+  if (!lines || !lines.length || lines.length > maxLines) return null;
+  if (topOffset + lines.length * lineHeightPx > availableHeight) return null;
+
+  const allowedWidths = lines.map((_, index) => {
+    const centerY = metrics.top + topOffset + (index + 0.5) * lineHeightPx;
+    return safeWidthAt(centerY);
+  });
+
+  const fits = lines.every((line, index) => line.width + gutter <= allowedWidths[index] + 0.01);
+  if (!fits) return null;
+
+  return {
+    lines,
+    topOffset,
+    lineHeight: lineHeightPx,
+    allowedWidths,
+    fontSize: fontSizePx,
+    letterSpacing: letterSpacingPx,
+    metrics,
+  };
+};
+
+const renderMagicAnswerLines = (layout) => {
+  if (!magicAnswerLines || !layout) return;
+  magicAnswerLines.style.fontSize = `${layout.fontSize.toFixed(3)}px`;
+  magicAnswerLines.style.letterSpacing = `${layout.letterSpacing.toFixed(3)}px`;
+  magicAnswerLines.style.lineHeight = `${layout.lineHeight.toFixed(3)}px`;
+  magicAnswerLines.style.top = '0px';
+  magicAnswerLines.style.height = '100%';
+  while (magicAnswerLines.firstChild) {
+    magicAnswerLines.removeChild(magicAnswerLines.firstChild);
+  }
+  layout.lines.forEach((line, index) => {
+    const span = document.createElement('span');
+    span.className = 'magic-layer__answer-line';
+    span.style.width = `${Math.max(0, layout.allowedWidths[index]).toFixed(2)}px`;
+    span.style.height = `${layout.lineHeight.toFixed(2)}px`;
+    span.style.lineHeight = `${layout.lineHeight.toFixed(2)}px`;
+    span.style.top = `${(layout.metrics.top + layout.topOffset + index * layout.lineHeight).toFixed(2)}px`;
+    span.textContent = line.text;
+    magicAnswerLines.appendChild(span);
+  });
+};
+
+// Finds the largest font size that still allows the text to fit inside the triangle.
+const fitMagicAnswer = () => {
+  if (!magicAnswerLines || !magicAnswerBox) return;
+  if (magicModal && magicModal.hidden) return;
+  ensureMagicAnswerMetrics();
+  if (!magicAnswerMeasure || !magicAnswerMeasure.baseSizePx) return;
+
+  const rawText = getMagicAnswerText();
+  const text = rawText.trim();
+  if (!text) return;
+  setMagicAnswerText(text);
+
+  const boxMetrics = getMagicBoxMetrics();
+  if (!boxMetrics) return;
+
+  const baseSizePx = magicAnswerMeasure.baseSizePx;
+  const minSizePx = Math.max(8, Math.round(baseSizePx * 0.45));
+  const maxSizePx = baseSizePx;
+  let low = minSizePx;
+  let high = maxSizePx;
+  let bestLayout = null;
+
+  for (let i = 0; i < 12; i += 1) {
+    const mid = (low + high) / 2;
+    const letterSpacingPx = computeMagicLetterSpacingPx(mid);
+    const lineHeightPx = magicAnswerMeasure.lineHeightRatio * mid;
+    const layout = wrapMagicAnswerLines(
+      text,
+      mid,
+      letterSpacingPx,
+      lineHeightPx,
+      boxMetrics.width,
+      boxMetrics.height
+    );
+    if (layout) {
+      bestLayout = layout;
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  if (!bestLayout) {
+    const letterSpacingPx = computeMagicLetterSpacingPx(minSizePx);
+    const lineHeightPx = magicAnswerMeasure.lineHeightRatio * minSizePx;
+    bestLayout = wrapMagicAnswerLines(
+      text,
+      minSizePx,
+      letterSpacingPx,
+      lineHeightPx,
+      boxMetrics.width,
+      boxMetrics.height
+    );
+  }
+
+  if (!bestLayout) {
+    while (magicAnswerLines.firstChild) {
+      magicAnswerLines.removeChild(magicAnswerLines.firstChild);
+    }
+    const fallbackLineHeight = magicAnswerMeasure.lineHeightRatio * minSizePx;
+    const metrics = getTriangleMetrics(boxMetrics.width, boxMetrics.height);
+    const span = document.createElement('span');
+    span.className = 'magic-layer__answer-line';
+    span.style.width = `${metrics.baseWidth.toFixed(2)}px`;
+    span.style.height = `${fallbackLineHeight.toFixed(2)}px`;
+    span.style.lineHeight = `${fallbackLineHeight.toFixed(2)}px`;
+    span.style.top = `${(metrics.top + (metrics.height - fallbackLineHeight) / 2).toFixed(2)}px`;
+    span.textContent = text.toUpperCase();
+    magicAnswerLines.style.fontSize = `${minSizePx}px`;
+    magicAnswerLines.style.letterSpacing = `${computeMagicLetterSpacingPx(minSizePx)}px`;
+    magicAnswerLines.style.lineHeight = `${fallbackLineHeight.toFixed(3)}px`;
+    magicAnswerLines.style.top = '0px';
+    magicAnswerLines.style.height = '100%';
+    magicAnswerLines.appendChild(span);
+    return;
+  }
+
+  renderMagicAnswerLines(bestLayout);
+};
+
+const scheduleMagicAnswerFit = () => {
+  if (!magicAnswerLines) return;
+  if (magicAnswerResizeRaf) {
+    window.cancelAnimationFrame(magicAnswerResizeRaf);
+  }
+  magicAnswerResizeRaf = window.requestAnimationFrame(() => {
+    magicAnswerResizeRaf = null;
+    fitMagicAnswer();
+  });
+};
+const setMagicStatus = (message) => {
+  if (magicStatus) magicStatus.textContent = message;
+};
+
+const setMagicAnswer = (text) => {
+  if (magicAnswerLines) {
+    setMagicAnswerText(text);
+    scheduleMagicAnswerFit();
+    magicAnswerLines.classList.remove('is-appearing');
+    void magicAnswerLines.offsetHeight;
+    magicAnswerLines.classList.add('is-appearing');
+  }
+};
+
+const resetMagicLayer = () => {
+  if (magicRevealTimer) {
+    window.clearTimeout(magicRevealTimer);
+    magicRevealTimer = null;
+  }
+  setMagicAnswer(MAGIC_DEFAULT_ANSWER);
+  setMagicStatus(MAGIC_DEFAULT_STATUS);
+  if (magicOrb) {
+    magicOrb.classList.remove('is-revealed');
+    magicOrb.classList.remove('is-revealing');
+    magicOrb.classList.remove('is-shaking');
+  }
+};
+
+const animateMagicOrb = () => {
+  if (!magicOrb) return;
+  magicOrb.classList.remove('is-revealed');
+  magicOrb.classList.remove('is-revealing');
+  magicOrb.classList.remove('is-shaking');
+  void magicOrb.offsetWidth;
+  magicOrb.classList.add('is-shaking');
+  pulseMagicOrb3d(700);
+  window.setTimeout(() => {
+    if (magicOrb) magicOrb.classList.remove('is-shaking');
+  }, 650);
+};
+
+const revealMagicAnswer = (source) => {
+  const now = Date.now();
+  if (now - lastMagicShake < MAGIC_SHAKE_COOLDOWN) return;
+  lastMagicShake = now;
+  if (magicRevealTimer) {
+    window.clearTimeout(magicRevealTimer);
+    magicRevealTimer = null;
+  }
+  animateMagicOrb();
+  setMagicStatus(MAGIC_PENDING_STATUS);
+  if (magicOrb) magicOrb.classList.add('is-revealing');
+  magicRevealTimer = window.setTimeout(() => {
+    magicRevealTimer = null;
+    if (magicOrb) {
+      magicOrb.classList.remove('is-revealing');
+      magicOrb.classList.add('is-revealed');
+    }
+    setMagicAnswer(pickRandom(MAGIC_RESPONSES));
+    setMagicStatus(
+      source === 'shake' ? 'The orb shifts. Ask again when ready.' : 'Ask again when ready.'
+    );
+  }, MAGIC_REVEAL_DELAY);
+};
+
+const supportsMotion = () => typeof window !== 'undefined' && 'DeviceMotionEvent' in window;
+
+const handleMagicMotion = (event) => {
+  if (!magicModal || magicModal.hidden) return;
+  const acceleration = event.accelerationIncludingGravity || event.acceleration;
+  if (!acceleration) return;
+  const { x, y, z } = acceleration;
+  
+  // Check if values are valid numbers
+  if (x === null || x === undefined || y === null || y === undefined || z === null || z === undefined) {
+    return;
+  }
+  
+  if (lastMagicAccel === null) {
+    lastMagicAccel = { x, y, z };
+    return;
+  }
+  
+  const delta =
+    Math.abs(x - lastMagicAccel.x) +
+    Math.abs(y - lastMagicAccel.y) +
+    Math.abs(z - lastMagicAccel.z);
+  
+  // Check if delta is a valid number
+  if (isNaN(delta) || !isFinite(delta)) {
+    lastMagicAccel = { x, y, z };
+    return;
+  }
+  
+  lastMagicAccel = { x, y, z };
+  if (delta > MAGIC_SHAKE_THRESHOLD) {
+    revealMagicAnswer('shake');
+  }
+};
+
+const attachMagicMotion = () => {
+  if (!supportsMotion() || magicMotionActive) return;
+  // Remove any existing listener first to avoid duplicates
+  window.removeEventListener('devicemotion', handleMagicMotion);
+  window.addEventListener('devicemotion', handleMagicMotion, { passive: true });
+  magicMotionActive = true;
+  lastMagicAccel = null; // Reset acceleration tracking
+};
+
+const detachMagicMotion = () => {
+  if (!supportsMotion() || !magicMotionActive) return;
+  window.removeEventListener('devicemotion', handleMagicMotion);
+  magicMotionActive = false;
+  lastMagicAccel = null;
+};
+
+const requestMagicMotionPermission = async () => {
+  if (!supportsMotion()) return false;
+  if (typeof DeviceMotionEvent.requestPermission !== 'function') return true;
+  try {
+    const result = await DeviceMotionEvent.requestPermission();
+    return result === 'granted';
+  } catch (error) {
+    return false;
+  }
+};
+
+const initMagicMotion = async () => {
+  if (!supportsMotion()) {
+    setMagicStatus('Tap the orb to reveal a message.');
+    if (magicEnableMotion) magicEnableMotion.hidden = true;
+    return;
+  }
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    // Check if permission was already granted (iOS 13+)
+    try {
+      // Note: requestPermission can only be called from user gesture
+      // So we show the button and let user click it
+      setMagicStatus('Enable motion or tap the orb to reveal a message.');
+      if (magicEnableMotion) magicEnableMotion.hidden = false;
+      return;
+    } catch (error) {
+      // Fall through to attach motion if check fails
+    }
+  }
+  attachMagicMotion();
+  setMagicStatus(MAGIC_DEFAULT_STATUS);
+  if (magicEnableMotion) magicEnableMotion.hidden = true;
+};
+
+const openMagicModal = () => {
+  if (!magicModal) return;
+  resetMagicLayer();
+  openModal(magicModal);
+  initMagicMotion();
+  initMagicOrb3d();
+  scheduleMagicAnswerFit();
+};
+
+const setMobileMenuOpen = (isOpen) => {
+  if (!siteNav || !mobileMenuToggle) return;
+  siteNav.classList.toggle('is-open', isOpen);
+  mobileMenuToggle.setAttribute('aria-expanded', String(isOpen));
+  mobileMenuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+};
+
+const closeMagicModal = () => {
+  if (!magicModal) return;
+  closeModal(magicModal);
+  detachMagicMotion();
+  stopMagicOrb3d();
+  resetMagicLayer();
+};
+
+if (magicTriggers.length) {
+  magicTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', openMagicModal);
+  });
+}
+
+if (magicModal) {
+  const closeTargets = magicModal.querySelectorAll('[data-magic-close]');
+  closeTargets.forEach((target) => {
+    target.addEventListener('click', closeMagicModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !magicModal.hidden) {
+      closeMagicModal();
+    }
+  });
+}
+
+if (mobileMenuToggle && siteNav) {
+  mobileMenuToggle.addEventListener('click', () => {
+    setMobileMenuOpen(!siteNav.classList.contains('is-open'));
+  });
+  siteNav.addEventListener('click', (event) => {
+    const target = event.target.closest('button, a');
+    if (target) setMobileMenuOpen(false);
+  });
+  document.addEventListener('click', (event) => {
+    if (siteNav.contains(event.target) || mobileMenuToggle.contains(event.target)) return;
+    setMobileMenuOpen(false);
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 560) setMobileMenuOpen(false);
+  });
+}
+
+if (magicOrb) {
+  magicOrb.addEventListener('click', () => revealMagicAnswer('tap'));
+  magicOrb.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      revealMagicAnswer('tap');
+    }
+  });
+}
+
+if (magicAnswerLines && magicAnswerBox) {
+  scheduleMagicAnswerFit();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      magicAnswerMeasure = null;
+      scheduleMagicAnswerFit();
+    });
+  }
+  window.addEventListener('resize', () => {
+    if (!magicModal || magicModal.hidden) return;
+    scheduleMagicAnswerFit();
+    resizeMagicOrb3d();
+  });
+}
+
+if (magicReset) {
+  magicReset.addEventListener('click', () => {
+    resetMagicLayer();
+  });
+}
+
+if (magicEnableMotion) {
+  magicEnableMotion.addEventListener('click', async () => {
+    const granted = await requestMagicMotionPermission();
+    if (granted) {
+      // Reset acceleration tracking when enabling motion
+      lastMagicAccel = null;
+      attachMagicMotion();
+      setMagicStatus(MAGIC_DEFAULT_STATUS);
+      magicEnableMotion.hidden = true;
+      return;
+    }
+    setMagicStatus('Motion access is off. Tap the orb to reveal a message.');
+    magicEnableMotion.hidden = true;
   });
 }
 

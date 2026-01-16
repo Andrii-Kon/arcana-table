@@ -18,6 +18,10 @@ import time
 import requests
 import jwt
 from jwt import PyJWKClient
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
 
 
 def calculate_formulas(full_name: str, birth_date: date, current_date: date) -> dict:
@@ -174,6 +178,9 @@ def calculate_formulas(full_name: str, birth_date: date, current_date: date) -> 
     
     return formulas
 
+if load_dotenv:
+    load_dotenv()
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = BASE_DIR
 NUMEROLOGY_DIR = os.path.join(ROOT_DIR, 'numerology_static')
@@ -248,7 +255,7 @@ def is_authenticated(req) -> bool:
 def is_auth_allowed(path: str) -> bool:
     if path.startswith('/auth'):
         return True
-    if path in ['/styles.css', '/config.js', '/auth.js', '/favicon.ico']:
+    if path in ['/styles.css', '/magic-layer.css', '/config.js', '/auth.js', '/favicon.ico']:
         return True
     if path == '/forget-password' or path.startswith('/forget-password/'):
         return True
@@ -285,6 +292,10 @@ def serve_tarot_index():
 @app.route('/styles.css', methods=['GET'])
 def serve_tarot_styles():
     return send_from_directory(ROOT_DIR, 'styles.css')
+
+@app.route('/magic-layer.css', methods=['GET'])
+def serve_magic_layer_styles():
+    return send_from_directory(ROOT_DIR, 'magic-layer.css')
 
 
 @app.route('/app.js', methods=['GET'])
