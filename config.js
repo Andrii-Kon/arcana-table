@@ -4,4 +4,4 @@ window.SUPABASE_ANON_KEY =
 const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 window.SUPABASE_REDIRECT = isLocalhost
   ? `${window.location.origin}/auth/callback`
-  : 'https://andriikun.pythonanywhere.com/auth/callback';
+  : 'https://idealist35.eu.pythonanywhere.com/auth/callback';
