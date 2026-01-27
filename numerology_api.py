@@ -22,6 +22,7 @@ from typing import Optional
 import base64
 import threading
 import re
+import secrets
 try:
     from dotenv import load_dotenv
 except Exception:
@@ -563,6 +564,43 @@ def _generate_magic_link(email, redirect_url=None, link_type='invite'):
     return _extract_action_link(data), None
 
 
+def _generate_temp_password():
+    return f"Lumora-{secrets.token_urlsafe(9)}"
+
+
+def _create_or_update_user_password(email, full_name=None):
+    headers = _get_supabase_admin_headers()
+    if not headers or not SUPABASE_URL:
+        return None, None, 'Supabase admin key is missing.'
+    base = SUPABASE_URL.rstrip('/')
+    existing_id = _get_user_id_by_email(email)
+    temp_password = _generate_temp_password()
+    payload = {
+        'password': temp_password,
+        'email_confirm': True,
+    }
+    if full_name:
+        payload['user_metadata'] = {'full_name': full_name}
+    try:
+        if existing_id:
+            url = f'{base}/auth/v1/admin/users/{existing_id}'
+            response = requests.put(url, headers=headers, json=payload, timeout=10)
+        else:
+            payload['email'] = email
+            url = f'{base}/auth/v1/admin/users'
+            response = requests.post(url, headers=headers, json=payload, timeout=10)
+        if response.status_code >= 300:
+            try:
+                return None, None, response.json()
+            except Exception:
+                return None, None, response.text
+        data = response.json() if response.content else {}
+        user_id = data.get('id') or data.get('user', {}).get('id') or existing_id
+        return user_id, temp_password, None
+    except Exception as exc:
+        return None, None, str(exc)
+
+
 def _get_user_id_by_email(email):
     headers = _get_supabase_admin_headers()
     if not headers or not SUPABASE_URL:
@@ -811,11 +849,11 @@ def grant_access():
         return jsonify({"status": "error", "message": "Email is required"}), 400
     user_id = None
     action_link = None
+    dev_password = None
     if DEV_MAGIC_LINK:
-        action_link, error = _generate_magic_link(email, redirect_url, 'invite')
+        user_id, dev_password, error = _create_or_update_user_password(email, full_name or None)
         if error:
-            return jsonify({"status": "error", "message": "Generate link failed", "details": error}), 500
-        user_id = _get_user_id_by_email(email)
+            return jsonify({"status": "error", "message": "Generate login failed", "details": error}), 500
     else:
         user_id, error = _invite_user(email, full_name or None, redirect_url)
         if error:
@@ -830,6 +868,8 @@ def grant_access():
         "user_id": user_id,
         "image": "queued" if queued else "skipped",
         "action_link": action_link,
+        "dev_password": dev_password,
+        "dev_email": email if dev_password else None,
     })
 
 
