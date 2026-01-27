@@ -634,7 +634,7 @@ def _generate_soulmate_image_bytes(prompt: str):
         'model': OPENAI_IMAGE_MODEL,
         'prompt': prompt,
         'size': OPENAI_IMAGE_SIZE,
-        'response_format': 'b64_json',
+        'output_format': 'png',
     }
     try:
         response = requests.post(
