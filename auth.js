@@ -71,6 +71,13 @@ const hasSupabaseConfig = () => {
   );
 };
 
+const getAccessTokenFromHash = () => {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return '';
+  const params = new URLSearchParams(hash);
+  return params.get('access_token') || '';
+};
+
 const supabaseClient =
   window.supabase && hasSupabaseConfig()
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -157,7 +164,6 @@ const handleAuthRoute = async () => {
 };
 
 const handleAuthRedirect = async () => {
-  if (!supabaseClient) return;
   const currentUrl = window.location.href;
   const url = new URL(currentUrl);
   const isAuthPage = window.location.pathname.startsWith('/auth');
@@ -167,6 +173,19 @@ const handleAuthRedirect = async () => {
     isRecoveryFlow = true;
     setRecoveryPending(true);
   }
+
+  const hashToken = getAccessTokenFromHash();
+  if (hashToken) {
+    const result = await syncServerSession(hashToken);
+    if (result.ok) {
+      window.history.replaceState({}, document.title, '/auth/callback');
+      window.location.href = '/';
+      return;
+    }
+    setAuthStatus('Server session failed. Check SUPABASE_URL in server env.');
+  }
+
+  if (!supabaseClient) return;
 
   if (url.searchParams.get('code')) {
     const { data, error } = await supabaseClient.auth.exchangeCodeForSession(currentUrl);
