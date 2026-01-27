@@ -18,6 +18,10 @@ import time
 import requests
 import jwt
 from jwt import PyJWKClient
+from typing import Optional
+import base64
+import threading
+import re
 try:
     from dotenv import load_dotenv
 except Exception:
@@ -197,11 +201,25 @@ SUPABASE_JWKS_URL = os.getenv('SUPABASE_JWKS_URL', '').strip()
 if not SUPABASE_JWKS_URL and SUPABASE_URL:
     SUPABASE_JWKS_URL = SUPABASE_URL.rstrip('/') + '/auth/v1/keys'
 
+
+SERVICE_ROLE_KEY = os.getenv('SERVICE_ROLE_KEY', '').strip()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '').strip()
+OPENAI_IMAGE_MODEL = os.getenv('OPENAI_IMAGE_MODEL', 'gpt-image-1').strip() or 'gpt-image-1'
+OPENAI_IMAGE_SIZE = os.getenv('OPENAI_IMAGE_SIZE', '1024x1024').strip() or '1024x1024'
+OPENAI_TEXT_MODEL = os.getenv('OPENAI_TEXT_MODEL', 'gpt-4o-mini').strip() or 'gpt-4o-mini'
+SOULMATE_IMAGE_DIR = os.getenv('SOULMATE_IMAGE_DIR', '').strip()
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
+SOULMATE_IMAGE_PROMPT = os.getenv('SOULMATE_IMAGE_PROMPT', '').strip() or (
+    'A dreamy, romantic soulmate portrait, soft lighting, pastel palette, cinematic depth of field.'
+)
+if not SOULMATE_IMAGE_DIR:
+    SOULMATE_IMAGE_DIR = os.path.join(DATA_DIR, 'soulmate_images')
+
 _jwks_client = None
 _jwks_client_set_at = 0
 
 
-def _get_jwks_client() -> PyJWKClient | None:
+def _get_jwks_client() -> Optional[PyJWKClient]:
     global _jwks_client, _jwks_client_set_at
     if not SUPABASE_JWKS_URL:
         return None
@@ -265,7 +283,326 @@ def is_auth_allowed(path: str) -> bool:
         return True
     if path.startswith('/api/session') or path.startswith('/api/logout'):
         return True
+    if path.startswith('/api/grant-access'):
+        return True
     return False
+
+
+
+def _get_supabase_admin_headers():
+    if not SERVICE_ROLE_KEY:
+        return None
+    return {
+        'Authorization': f'Bearer {SERVICE_ROLE_KEY}',
+        'apikey': SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json',
+    }
+
+
+def _get_default_redirect_url():
+    redirect_url = os.getenv('SUPABASE_REDIRECT_URL', '').strip() or os.getenv('SUPABASE_REDIRECT', '').strip()
+    if redirect_url:
+        return redirect_url
+    try:
+        return request.url_root.rstrip('/') + '/auth/callback'
+    except Exception:
+        return ''
+
+
+def _safe_email_key(email: str) -> str:
+    if not email:
+        return 'user'
+    key = re.sub(r'[^a-z0-9]+', '_', email.lower()).strip('_')
+    return key or 'user'
+
+
+def _ensure_soulmate_dir():
+    os.makedirs(SOULMATE_IMAGE_DIR, exist_ok=True)
+
+
+def _soulmate_lock_path(key: str) -> str:
+    return os.path.join(SOULMATE_IMAGE_DIR, f"{key}.lock")
+
+
+def _soulmate_image_paths(user_id, email):
+    paths = []
+    if user_id:
+        paths.append(os.path.join(SOULMATE_IMAGE_DIR, f"{user_id}.png"))
+    if email:
+        paths.append(os.path.join(SOULMATE_IMAGE_DIR, f"{_safe_email_key(email)}.png"))
+    return paths
+
+
+def _find_soulmate_image(user_id, email):
+    _ensure_soulmate_dir()
+    if user_id and email:
+        user_path = os.path.join(SOULMATE_IMAGE_DIR, f"{user_id}.png")
+        email_path = os.path.join(SOULMATE_IMAGE_DIR, f"{_safe_email_key(email)}.png")
+        if not os.path.exists(user_path) and os.path.exists(email_path):
+            try:
+                os.rename(email_path, user_path)
+            except Exception:
+                pass
+        if os.path.exists(user_path):
+            return user_path
+    for path in _soulmate_image_paths(user_id, email):
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def _is_soulmate_processing(user_id, email):
+    _ensure_soulmate_dir()
+    keys = []
+    if user_id:
+        keys.append(user_id)
+    if email:
+        keys.append(_safe_email_key(email))
+    return any(os.path.exists(_soulmate_lock_path(k)) for k in keys)
+
+
+def _format_quiz_context(quiz):
+    if not quiz:
+        return ''
+    if isinstance(quiz, str):
+        return quiz.strip()
+    if isinstance(quiz, list):
+        lines = []
+        for item in quiz:
+            if isinstance(item, dict):
+                question = str(item.get('question') or item.get('q') or '').strip()
+                answer = item.get('answer') or item.get('a') or item.get('value') or ''
+                if isinstance(answer, list):
+                    answer = ', '.join([str(entry) for entry in answer if entry])
+                answer = str(answer).strip()
+                if question and answer:
+                    lines.append(f"{question}: {answer}")
+                elif answer:
+                    lines.append(answer)
+            elif item:
+                lines.append(str(item).strip())
+        return '\n'.join([line for line in lines if line])
+    if isinstance(quiz, dict):
+        lines = []
+        for key, value in quiz.items():
+            key_text = str(key).strip()
+            if isinstance(value, list):
+                value_text = ', '.join([str(entry) for entry in value if entry])
+            else:
+                value_text = str(value).strip()
+            if key_text and value_text:
+                lines.append(f"{key_text}: {value_text}")
+            elif value_text:
+                lines.append(value_text)
+        return '\n'.join([line for line in lines if line])
+    return str(quiz).strip()
+
+
+def _extract_response_text(data):
+    if not isinstance(data, dict):
+        return None
+    if data.get('output_text'):
+        return str(data.get('output_text')).strip()
+    output_items = data.get('output') or []
+    for item in output_items:
+        if item.get('type') != 'message':
+            continue
+        for content in item.get('content') or []:
+            if content.get('type') == 'output_text' and content.get('text'):
+                return str(content.get('text')).strip()
+    return None
+
+
+def _generate_soulmate_prompt(quiz_context: str):
+    if not OPENAI_API_KEY or not OPENAI_TEXT_MODEL:
+        return None, 'OPENAI_TEXT_MODEL missing.'
+    trimmed_context = (quiz_context or '').strip()
+    if not trimmed_context:
+        return None, 'Quiz context missing.'
+    if len(trimmed_context) > 2000:
+        trimmed_context = trimmed_context[:2000]
+    payload = {
+        'model': OPENAI_TEXT_MODEL,
+        'input': [
+            {
+                'role': 'system',
+                'content': (
+                    'You are a prompt engineer. Craft a vivid, single-line image prompt for a '
+                    'romantic soulmate portrait based on the quiz answers. Keep it tasteful, '
+                    'adult, and safe (no minors, no explicit nudity). Use soft lighting, '
+                    'cinematic depth of field, and a dreamy, elegant style. Do not mention "quiz" '
+                    'or "answers". Output only the prompt, no quotes.'
+                ),
+            },
+            {
+                'role': 'user',
+                'content': f"Quiz answers:\n{trimmed_context}",
+            },
+        ],
+    }
+    try:
+        response = requests.post(
+            'https://api.openai.com/v1/responses',
+            headers={
+                'Authorization': f'Bearer {OPENAI_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json=payload,
+            timeout=30,
+        )
+        if response.status_code >= 300:
+            return None, response.text
+        data = response.json() if response.content else {}
+        text = _extract_response_text(data)
+        return text, None
+    except Exception as exc:
+        return None, str(exc)
+
+
+def _get_authenticated_user():
+    token = request.cookies.get('sb_access')
+    if not token or not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        return None
+    try:
+        response = requests.get(
+            SUPABASE_URL.rstrip('/') + '/auth/v1/user',
+            headers={
+                'Authorization': f'Bearer {token}',
+                'apikey': SUPABASE_ANON_KEY,
+            },
+            timeout=6,
+        )
+        if response.status_code == 200:
+            return response.json()
+    except Exception:
+        return None
+    return None
+
+
+def _invite_user(email, full_name=None, redirect_url=None):
+    headers = _get_supabase_admin_headers()
+    if not headers or not SUPABASE_URL:
+        return None, 'Supabase admin key is missing.'
+    payload = {'email': email}
+    if full_name:
+        payload['data'] = {'full_name': full_name}
+    if redirect_url:
+        payload['redirect_to'] = redirect_url
+    response = requests.post(
+        SUPABASE_URL.rstrip('/') + '/auth/v1/admin/invite',
+        headers=headers,
+        json=payload,
+        timeout=10,
+    )
+    if response.status_code >= 300:
+        try:
+            return None, response.json()
+        except Exception:
+            return None, response.text
+    data = response.json() if response.content else {}
+    user_id = data.get('id') or data.get('user', {}).get('id')
+    return user_id, None
+
+
+def _get_user_id_by_email(email):
+    headers = _get_supabase_admin_headers()
+    if not headers or not SUPABASE_URL:
+        return None
+    try:
+        response = requests.get(
+            SUPABASE_URL.rstrip('/') + '/auth/v1/admin/users',
+            headers=headers,
+            params={'email': email},
+            timeout=10,
+        )
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        users = data.get('users') if isinstance(data, dict) else data
+        if isinstance(users, list) and users:
+            return users[0].get('id')
+    except Exception:
+        return None
+    return None
+
+
+def _generate_soulmate_image_bytes(prompt: str):
+    if not OPENAI_API_KEY:
+        return None, 'OPENAI_API_KEY missing.'
+    payload = {
+        'model': OPENAI_IMAGE_MODEL,
+        'prompt': prompt,
+        'size': OPENAI_IMAGE_SIZE,
+        'response_format': 'b64_json',
+    }
+    try:
+        response = requests.post(
+            'https://api.openai.com/v1/images/generations',
+            headers={
+                'Authorization': f'Bearer {OPENAI_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json=payload,
+            timeout=60,
+        )
+        if response.status_code >= 300:
+            return None, response.text
+        data = response.json() if response.content else {}
+        image_data = (data.get('data') or [{}])[0]
+        b64 = image_data.get('b64_json')
+        if not b64:
+            return None, 'No image data returned.'
+        return base64.b64decode(b64), None
+    except Exception as exc:
+        return None, str(exc)
+
+
+def _generate_and_store_soulmate(key: str, prompt: Optional[str] = None, quiz_context: Optional[str] = None):
+    try:
+        prompt_text = prompt
+        if not prompt_text and quiz_context:
+            prompt_text, _error = _generate_soulmate_prompt(quiz_context)
+        if not prompt_text:
+            prompt_text = SOULMATE_IMAGE_PROMPT
+        image_bytes, _error = _generate_soulmate_image_bytes(prompt_text)
+        if image_bytes:
+            _ensure_soulmate_dir()
+            path = os.path.join(SOULMATE_IMAGE_DIR, f"{key}.png")
+            with open(path, 'wb') as handle:
+                handle.write(image_bytes)
+    finally:
+        lock_path = _soulmate_lock_path(key)
+        if os.path.exists(lock_path):
+            try:
+                os.remove(lock_path)
+            except Exception:
+                pass
+
+
+def _queue_soulmate_generation(user_id, email, prompt=None, quiz=None):
+    key = user_id or _safe_email_key(email)
+    if not key:
+        return False
+    quiz_context = _format_quiz_context(quiz)
+    _ensure_soulmate_dir()
+    image_path = os.path.join(SOULMATE_IMAGE_DIR, f"{key}.png")
+    if os.path.exists(image_path):
+        return True
+    lock_path = _soulmate_lock_path(key)
+    if os.path.exists(lock_path):
+        return True
+    try:
+        with open(lock_path, 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+    except Exception:
+        pass
+    thread = threading.Thread(
+        target=_generate_and_store_soulmate,
+        args=(key, prompt, quiz_context or None),
+        daemon=True,
+    )
+    thread.start()
+    return True
 
 app = Flask(__name__)
 CORS(app)  # Разрешаем CORS для фронтенда
@@ -397,6 +734,71 @@ def logout():
     response = make_response(jsonify({"status": "ok"}))
     response.delete_cookie('sb_access')
     return response
+
+
+@app.route('/api/grant-access', methods=['POST'])
+def grant_access():
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token', '')
+        if token != ADMIN_TOKEN:
+            return jsonify({"status": "error", "message": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    full_name = (data.get('full_name') or '').strip()
+    prompt = (data.get('prompt') or '').strip()
+    quiz = data.get('quiz') or data.get('answers')
+    redirect_url = data.get('redirect_url') or _get_default_redirect_url()
+    if not email:
+        return jsonify({"status": "error", "message": "Email is required"}), 400
+    user_id, error = _invite_user(email, full_name or None, redirect_url)
+    if error:
+        existing_id = _get_user_id_by_email(email)
+        if existing_id:
+            user_id = existing_id
+        else:
+            return jsonify({"status": "error", "message": "Invite failed", "details": error}), 500
+    queued = _queue_soulmate_generation(user_id, email, prompt or None, quiz)
+    return jsonify({"status": "ok", "user_id": user_id, "image": "queued" if queued else "skipped"})
+
+
+@app.route('/api/soulmate', methods=['GET'])
+def soulmate_status():
+    user = _get_authenticated_user()
+    if not user:
+        return jsonify({"status": "unauthorized"}), 401
+    user_id = user.get('id')
+    email = user.get('email')
+    image_path = _find_soulmate_image(user_id, email)
+    if image_path:
+        return jsonify({"status": "ready", "image_url": "/api/soulmate-image"})
+    if _is_soulmate_processing(user_id, email):
+        return jsonify({"status": "processing"})
+    return jsonify({"status": "missing"})
+
+
+@app.route('/api/soulmate-image', methods=['GET'])
+def soulmate_image():
+    user = _get_authenticated_user()
+    if not user:
+        return jsonify({"status": "unauthorized"}), 401
+    user_id = user.get('id')
+    email = user.get('email')
+    image_path = _find_soulmate_image(user_id, email)
+    if not image_path:
+        return jsonify({"status": "not_found"}), 404
+    return send_from_directory(SOULMATE_IMAGE_DIR, os.path.basename(image_path))
+
+
+@app.route('/api/soulmate/generate', methods=['POST'])
+def soulmate_generate():
+    user = _get_authenticated_user()
+    if not user:
+        return jsonify({"status": "unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    prompt = (data.get('prompt') or '').strip()
+    quiz = data.get('quiz') or data.get('answers')
+    queued = _queue_soulmate_generation(user.get('id'), user.get('email'), prompt or None, quiz)
+    return jsonify({"status": "queued" if queued else "skipped"})
 
 
 @app.route('/api/health', methods=['GET'])

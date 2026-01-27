@@ -2430,6 +2430,11 @@ const authResetEmail = document.getElementById('authResetEmail');
 const authForgot = document.querySelector('[data-auth-forgot]');
 const authResetSend = document.querySelector('[data-auth-reset-send]');
 
+const soulmatePanel = document.getElementById('soulmatePanel');
+const soulmateImage = document.getElementById('soulmateImage');
+const soulmateStatus = document.getElementById('soulmateStatus');
+let soulmateRequested = false;
+
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 const SUPABASE_REDIRECT =
@@ -2473,6 +2478,57 @@ const syncServerSession = async (accessToken) => {
   }
 };
 
+const setSoulmateStatus = (message) => {
+  if (!soulmateStatus) return;
+  soulmateStatus.textContent = message || '';
+  soulmateStatus.hidden = !message;
+};
+
+const requestSoulmateGeneration = async () => {
+  if (soulmateRequested) return;
+  soulmateRequested = true;
+  try {
+    await fetch('/api/soulmate/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({}),
+    });
+  } catch (error) {
+    // Ignore generation errors.
+  }
+};
+
+const loadSoulmate = async () => {
+  if (!soulmatePanel) return;
+  try {
+    const response = await fetch('/api/soulmate', { credentials: 'same-origin' });
+    if (!response.ok) {
+      soulmatePanel.hidden = true;
+      return;
+    }
+    const data = await response.json();
+    soulmatePanel.hidden = false;
+    if (data.status === 'ready' && data.image_url) {
+      if (soulmateImage) {
+        soulmateImage.hidden = false;
+        soulmateImage.src = data.image_url;
+      }
+      setSoulmateStatus('');
+      return;
+    }
+    if (soulmateImage) soulmateImage.hidden = true;
+    if (data.status === 'processing') {
+      setSoulmateStatus('Your soulmate portrait is being prepared...');
+      return;
+    }
+    setSoulmateStatus('We are preparing your soulmate portrait.');
+    await requestSoulmateGeneration();
+  } catch (error) {
+    soulmatePanel.hidden = true;
+  }
+};
+
 const refreshAuthUI = async () => {
   if (!authTrigger) return;
   if (window.location.pathname.startsWith('/auth')) return;
@@ -2512,9 +2568,10 @@ const refreshAuthUI = async () => {
       authDisplayEmail.textContent = email;
     }
     if (authSignOut) authSignOut.hidden = false;
-    syncServerSession(session.access_token);
+    await syncServerSession(session.access_token);
     document.body.classList.remove('auth-locked');
     closeAuthModal();
+    loadSoulmate();
   } else {
     authTrigger.textContent = 'Sign in';
     authTrigger.classList.remove('is-authenticated');
@@ -2668,7 +2725,7 @@ if (authForm) {
       }
 
       if (data?.session?.access_token) {
-        syncServerSession(data.session.access_token);
+        await syncServerSession(data.session.access_token);
         return;
       }
 
@@ -2691,7 +2748,7 @@ if (authForm) {
     }
 
     if (data?.session?.access_token) {
-      syncServerSession(data.session.access_token);
+      await syncServerSession(data.session.access_token);
     }
   });
 }

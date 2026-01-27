@@ -44,16 +44,6 @@ def post_json(url: str, payload: dict, api_key: str, timeout_s: int = 90):
         return json.loads(res.read().decode("utf-8"))
 
 
-def try_read_http_error_body(exc: urllib.error.HTTPError) -> str:
-    try:
-        raw = exc.read()
-        if not raw:
-            return ""
-        return raw.decode("utf-8", errors="replace")
-    except Exception:
-        return ""
-
-
 def extract_output_text(response: dict) -> str:
     output = response.get("output", [])
     for item in output:
@@ -77,8 +67,6 @@ def generate_for_card(*, api_key: str, model: str, lang: str, card: dict):
         "You write short, grounded tarot texts for a casual web game.\n"
         "No fatalistic claims. No health/legal/financial advice. No fear-mongering.\n"
         "Use second-person (you/your). Keep it warm, clear, and practical.\n"
-        "meanings = general, canonical meaning of the card.\n"
-        "personalized_interpretation = a personal interpretation addressed to the user.\n"
         "Never mention the card name, arcana, or 'tarot'.\n"
         "Avoid clichés (e.g., 'the universe', 'destiny', 'everything happens for a reason').\n"
         "Do not use ellipses.\n"
@@ -93,11 +81,10 @@ def generate_for_card(*, api_key: str, model: str, lang: str, card: dict):
         "task": (
             "Paraphrase the existing texts (keep the same meaning, but rewrite wording).\n"
             "Return JSON with:\n"
-            "- meanings: exactly 2 variants, each exactly 1 sentence (12–22 words). This is a general, canonical meaning of the card.\n"
-            "- personalized_interpretation: exactly 2 variants, each exactly 1 sentence (10–18 words), actionable and supportive.\n"
+            "- meanings:\n"
+            "- personalized_interpretation:\n"
             "Rules:\n"
-            "- Do not repeat wording between meanings and personalized_interpretation.\n"
-            "- Keep it non-judgmental and non-fatalistic.\n"
+            "- Try to not repeat wording between meanings and personalized_interpretation.\n"
             "- Keep it consistent with the provided keywords/scene.\n"
             "- Never mention the card name/arcana.\n"
             "- No ellipses.\n"
@@ -114,10 +101,9 @@ def generate_for_card(*, api_key: str, model: str, lang: str, card: dict):
             {"role": "system", "content": system},
             {"role": "user", "content": json.dumps(user, ensure_ascii=False)},
         ],
-        # Responses API: structured output is configured via `text.format`.
-        "text": {
-            "format": {
-                "type": "json_schema",
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
                 "name": "CardTexts",
                 "schema": {
                     "type": "object",
@@ -138,7 +124,7 @@ def generate_for_card(*, api_key: str, model: str, lang: str, card: dict):
                     },
                     "required": ["meanings", "personalized_interpretation"],
                 },
-            }
+            },
         },
     }
 
@@ -189,18 +175,6 @@ def main():
         ).hexdigest()[:12]
         cache_key = f"{slug}:{card.get('id','')}:{src_hash}"
         if cache_key in cache:
-            if args.apply:
-                result = cache[cache_key]
-                upright = card.get("upright", {})
-                upright["meanings"] = [s.strip() for s in result["meanings"]]
-                upright["personalized_interpretation"] = [
-                    s.strip() for s in result["personalized_interpretation"]
-                ]
-                card["upright"] = upright
-                processed += 1
-                print(f"[ok] {card.get('name')} (cached)")
-                if args.limit and processed >= args.limit:
-                    break
             continue
         result = None
         for attempt in range(4):
@@ -209,18 +183,7 @@ def main():
                     api_key=api_key, model=args.model, lang=args.lang, card=card
                 )
                 break
-            except urllib.error.HTTPError as exc:
-                body = try_read_http_error_body(exc)
-                detail = f"HTTP {exc.code}"
-                if body:
-                    body_one_line = " ".join(body.split())
-                    detail = f"{detail}: {body_one_line[:220]}"
-                wait = 2**attempt
-                print(
-                    f"[warn] {card.get('name')} failed: {detail} (retry in {wait}s)"
-                )
-                time.sleep(wait)
-            except (urllib.error.URLError, json.JSONDecodeError) as exc:
+            except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError) as exc:
                 wait = 2**attempt
                 print(f"[warn] {card.get('name')} failed: {exc} (retry in {wait}s)")
                 time.sleep(wait)
