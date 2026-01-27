@@ -431,7 +431,7 @@ def _generate_soulmate_prompt(quiz_context: str):
                 'role': 'system',
                 'content': (
                     'You are a prompt engineer. Write a vivid, prompt for an AI model'
-                    'that generates a hand-drawn soulmate portrait, based on the quiz answers. Only soulmate portrait on the image, specify that, that sould be only one person on image (soulmate).'
+                    'that generates a hand-drawn soulmate portrait, based on the all quiz answers. Only soulmate portrait on the image, specify that, that sould be only one person on image (soulmate).'
                     'Keep it tasteful, adult, and safe (no minors, no explicit nudity). Use soft '
                     'lighting, cinematic depth of field, and a dreamy, elegant style. Do not '
                     'mention "quiz" or "answers". Output only the prompt, no quotes.'
