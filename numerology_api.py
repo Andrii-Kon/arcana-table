@@ -23,6 +23,7 @@ import base64
 import threading
 import re
 import secrets
+import json
 try:
     from dotenv import load_dotenv
 except Exception:
@@ -654,19 +655,56 @@ def _generate_soulmate_image_bytes(prompt: str):
         return None, str(exc)
 
 
-def _generate_and_store_soulmate(key: str, prompt: Optional[str] = None, quiz_context: Optional[str] = None):
+def _log_generation(message: str):
+    print(f"[soulmate] {message}", flush=True)
+
+
+def _write_text_file(path: str, text: str):
+    if text is None:
+        return
     try:
+        with open(path, 'w', encoding='utf-8') as handle:
+            handle.write(text)
+    except Exception:
+        pass
+
+
+def _write_json_file(path: str, payload):
+    if payload is None:
+        return
+    try:
+        with open(path, 'w', encoding='utf-8') as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _generate_and_store_soulmate(key: str, prompt: Optional[str] = None, quiz_context: Optional[str] = None, quiz_raw=None):
+    try:
+        _log_generation(f"start key={key}")
         prompt_text = prompt
+        if quiz_raw is not None:
+            _write_json_file(os.path.join(SOULMATE_IMAGE_DIR, f"{key}.quiz.json"), quiz_raw)
         if not prompt_text and quiz_context:
+            _log_generation(f"prompt_generation_start key={key}")
             prompt_text, _error = _generate_soulmate_prompt(quiz_context)
+            if _error:
+                _log_generation(f"prompt_generation_error key={key} error={_error}")
+            else:
+                _log_generation(f"prompt_generation_done key={key}")
         if not prompt_text:
             prompt_text = SOULMATE_IMAGE_PROMPT
+        _write_text_file(os.path.join(SOULMATE_IMAGE_DIR, f"{key}.prompt.txt"), prompt_text)
+        _log_generation(f"image_generation_start key={key}")
         image_bytes, _error = _generate_soulmate_image_bytes(prompt_text)
+        if _error:
+            _log_generation(f"image_generation_error key={key} error={_error}")
         if image_bytes:
             _ensure_soulmate_dir()
             path = os.path.join(SOULMATE_IMAGE_DIR, f"{key}.png")
             with open(path, 'wb') as handle:
                 handle.write(image_bytes)
+            _log_generation(f"image_saved key={key} path={path}")
     finally:
         lock_path = _soulmate_lock_path(key)
         if os.path.exists(lock_path):
@@ -674,6 +712,7 @@ def _generate_and_store_soulmate(key: str, prompt: Optional[str] = None, quiz_co
                 os.remove(lock_path)
             except Exception:
                 pass
+        _log_generation(f"done key={key}")
 
 
 def _queue_soulmate_generation(user_id, email, prompt=None, quiz=None):
@@ -695,7 +734,7 @@ def _queue_soulmate_generation(user_id, email, prompt=None, quiz=None):
         pass
     thread = threading.Thread(
         target=_generate_and_store_soulmate,
-        args=(key, prompt, quiz_context or None),
+        args=(key, prompt, quiz_context or None, quiz),
         daemon=True,
     )
     thread.start()
