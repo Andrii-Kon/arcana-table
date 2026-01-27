@@ -610,7 +610,7 @@ def _get_user_id_by_email(email):
         response = requests.get(
             SUPABASE_URL.rstrip('/') + '/auth/v1/admin/users',
             headers=headers,
-            params={'email': email},
+            params={'per_page': 1000},
             timeout=10,
         )
         if response.status_code != 200:
@@ -618,7 +618,10 @@ def _get_user_id_by_email(email):
         data = response.json()
         users = data.get('users') if isinstance(data, dict) else data
         if isinstance(users, list) and users:
-            return users[0].get('id')
+            target = (email or '').strip().lower()
+            for user in users:
+                if (user.get('email') or '').strip().lower() == target:
+                    return user.get('id')
     except Exception:
         return None
     return None
