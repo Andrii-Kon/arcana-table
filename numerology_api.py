@@ -209,6 +209,7 @@ OPENAI_IMAGE_SIZE = os.getenv('OPENAI_IMAGE_SIZE', '1024x1024').strip() or '1024
 OPENAI_TEXT_MODEL = os.getenv('OPENAI_TEXT_MODEL', 'gpt-4o-mini').strip() or 'gpt-4o-mini'
 SOULMATE_IMAGE_DIR = os.getenv('SOULMATE_IMAGE_DIR', '').strip()
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
+DEV_MAGIC_LINK = os.getenv('DEV_MAGIC_LINK', '').strip().lower() in ('1', 'true', 'yes', 'on')
 SOULMATE_IMAGE_PROMPT = os.getenv('SOULMATE_IMAGE_PROMPT', '').strip() or (
     'A dreamy, romantic soulmate portrait, soft lighting, pastel palette, cinematic depth of field.'
 )
@@ -515,6 +516,53 @@ def _invite_user(email, full_name=None, redirect_url=None):
     return user_id, None
 
 
+def _extract_action_link(data):
+    if not isinstance(data, dict):
+        return None
+    if data.get('action_link'):
+        return data.get('action_link')
+    properties = data.get('properties') or {}
+    if isinstance(properties, dict) and properties.get('action_link'):
+        return properties.get('action_link')
+    return None
+
+
+def _generate_magic_link(email, redirect_url=None, link_type='invite'):
+    headers = _get_supabase_admin_headers()
+    if not headers or not SUPABASE_URL:
+        return None, 'Supabase admin key is missing.'
+    payload = {
+        'type': link_type,
+        'email': email,
+    }
+    if redirect_url:
+        payload['redirect_to'] = redirect_url
+    base = SUPABASE_URL.rstrip('/')
+    urls = [
+        f'{base}/auth/v1/admin/generate_link',
+        f'{base}/auth/v1/generate_link',
+    ]
+    response = None
+    for url in urls:
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=10,
+        )
+        if response.status_code != 404:
+            break
+    if not response:
+        return None, 'Generate link request failed.'
+    if response.status_code >= 300:
+        try:
+            return None, response.json()
+        except Exception:
+            return None, response.text
+    data = response.json() if response.content else {}
+    return _extract_action_link(data), None
+
+
 def _get_user_id_by_email(email):
     headers = _get_supabase_admin_headers()
     if not headers or not SUPABASE_URL:
@@ -761,15 +809,28 @@ def grant_access():
     redirect_url = data.get('redirect_url') or _get_default_redirect_url()
     if not email:
         return jsonify({"status": "error", "message": "Email is required"}), 400
-    user_id, error = _invite_user(email, full_name or None, redirect_url)
-    if error:
-        existing_id = _get_user_id_by_email(email)
-        if existing_id:
-            user_id = existing_id
-        else:
-            return jsonify({"status": "error", "message": "Invite failed", "details": error}), 500
+    user_id = None
+    action_link = None
+    if DEV_MAGIC_LINK:
+        action_link, error = _generate_magic_link(email, redirect_url, 'invite')
+        if error:
+            return jsonify({"status": "error", "message": "Generate link failed", "details": error}), 500
+        user_id = _get_user_id_by_email(email)
+    else:
+        user_id, error = _invite_user(email, full_name or None, redirect_url)
+        if error:
+            existing_id = _get_user_id_by_email(email)
+            if existing_id:
+                user_id = existing_id
+            else:
+                return jsonify({"status": "error", "message": "Invite failed", "details": error}), 500
     queued = _queue_soulmate_generation(user_id, email, prompt or None, quiz)
-    return jsonify({"status": "ok", "user_id": user_id, "image": "queued" if queued else "skipped"})
+    return jsonify({
+        "status": "ok",
+        "user_id": user_id,
+        "image": "queued" if queued else "skipped",
+        "action_link": action_link,
+    })
 
 
 @app.route('/api/soulmate', methods=['GET'])
