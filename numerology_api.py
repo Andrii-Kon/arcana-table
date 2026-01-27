@@ -488,12 +488,23 @@ def _invite_user(email, full_name=None, redirect_url=None):
         payload['data'] = {'full_name': full_name}
     if redirect_url:
         payload['redirect_to'] = redirect_url
-    response = requests.post(
-        SUPABASE_URL.rstrip('/') + '/auth/v1/admin/invite',
-        headers=headers,
-        json=payload,
-        timeout=10,
-    )
+    base = SUPABASE_URL.rstrip('/')
+    invite_urls = [
+        f'{base}/auth/v1/invite',
+        f'{base}/auth/v1/admin/invite',
+    ]
+    response = None
+    for url in invite_urls:
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=10,
+        )
+        if response.status_code != 404:
+            break
+    if not response:
+        return None, 'Invite request failed.'
     if response.status_code >= 300:
         try:
             return None, response.json()
