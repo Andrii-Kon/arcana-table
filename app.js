@@ -2437,21 +2437,6 @@ const soulmateModal = document.getElementById('soulmateModal');
 const soulmateTriggers = Array.from(document.querySelectorAll('[data-soulmate-trigger]'));
 let soulmateRequested = false;
 
-const setSoulmateTriggerVisibility = (isVisible) => {
-  if (!soulmateTriggers.length) return;
-  soulmateTriggers.forEach((trigger) => {
-    trigger.hidden = !isVisible;
-    trigger.setAttribute('aria-hidden', String(!isVisible));
-    if (!isVisible) {
-      trigger.tabIndex = -1;
-    } else {
-      trigger.removeAttribute('tabindex');
-    }
-  });
-};
-
-setSoulmateTriggerVisibility(false);
-
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 const SUPABASE_REDIRECT =
@@ -2526,8 +2511,10 @@ const loadSoulmate = async () => {
     }
     const data = await response.json();
     if (data.status === 'no_quiz') {
-      soulmatePanel.hidden = true;
-      return false;
+      soulmatePanel.hidden = false;
+      if (soulmateImage) soulmateImage.hidden = true;
+      setSoulmateStatus('Complete the quiz to unlock your soulmate portrait.');
+      return true;
     }
     soulmatePanel.hidden = false;
     if (data.status === 'ready' && data.image_url) {
@@ -2634,8 +2621,7 @@ const refreshAuthUI = async () => {
     await syncServerSession(session.access_token);
     document.body.classList.remove('auth-locked');
     closeAuthModal();
-    const hasSoulmate = await loadSoulmate();
-    setSoulmateTriggerVisibility(hasSoulmate);
+    await loadSoulmate();
   } else {
     authTrigger.textContent = 'Sign in';
     authTrigger.classList.remove('is-authenticated');
@@ -2653,7 +2639,6 @@ const refreshAuthUI = async () => {
     if (authDisplayEmail) authDisplayEmail.hidden = true;
     setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
-    setSoulmateTriggerVisibility(false);
     window.location.href = '/auth';
   }
 };
