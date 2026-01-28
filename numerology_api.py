@@ -213,7 +213,8 @@ SOULMATE_IMAGE_DIR = os.getenv('SOULMATE_IMAGE_DIR', '').strip()
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '').strip()
 DEV_MAGIC_LINK = os.getenv('DEV_MAGIC_LINK', '').strip().lower() in ('1', 'true', 'yes', 'on')
 SOULMATE_IMAGE_PROMPT = os.getenv('SOULMATE_IMAGE_PROMPT', '').strip() or (
-    'A dreamy, romantic soulmate portrait, soft lighting, pastel palette, cinematic depth of field.'
+    'A graphite pencil, hand-drawn soulmate portrait with realistic proportions, '
+    'clean background, soft shading, cross-hatching, and textured paper.'
 )
 if not SOULMATE_IMAGE_DIR:
     SOULMATE_IMAGE_DIR = os.path.join(DATA_DIR, 'soulmate_images')
@@ -479,11 +480,13 @@ def _generate_soulmate_prompt(quiz_context: str):
             {
                 'role': 'system',
                 'content': (
-                    'You are a prompt engineer. Write a vivid, prompt for an AI model'
-                    'that generates a hand-drawn soulmate portrait, based on the all quiz answers. Only soulmate portrait on the image, specify that, that sould be only one person on image (soulmate).'
-                    'Keep it tasteful, adult, and safe (no minors, no explicit nudity). Use soft '
-                    'lighting, cinematic depth of field, and a dreamy, elegant style. Do not '
-                    'mention "quiz" or "answers". Output only the prompt, no quotes.'
+                    'You are a prompt engineer. Write a vivid prompt for an AI model '
+                    'that generates a graphite pencil, hand-drawn soulmate portrait based on all '
+                    'quiz answers. Only one adult person on the image (the soulmate). Emphasize '
+                    'hand-drawn pencil lines, cross-hatching, subtle shading, textured paper, '
+                    'realistic proportions, and a clean background. Keep it tasteful, adult, and '
+                    'safe (no minors, no explicit nudity). Do not mention "quiz" or "answers". '
+                    'Output only the prompt, no quotes.'
                 ),
             },
             {
