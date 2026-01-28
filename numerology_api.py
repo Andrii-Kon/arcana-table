@@ -336,6 +336,15 @@ def _soulmate_image_paths(user_id, email):
     return paths
 
 
+def _quiz_file_paths(user_id, email):
+    paths = []
+    if user_id:
+        paths.append(os.path.join(SOULMATE_IMAGE_DIR, f"{user_id}.quiz.json"))
+    if email:
+        paths.append(os.path.join(SOULMATE_IMAGE_DIR, f"{_safe_email_key(email)}.quiz.json"))
+    return paths
+
+
 def _find_soulmate_image(user_id, email):
     _ensure_soulmate_dir()
     if user_id and email:
@@ -349,6 +358,24 @@ def _find_soulmate_image(user_id, email):
         if os.path.exists(user_path):
             return user_path
     for path in _soulmate_image_paths(user_id, email):
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def _find_quiz_file(user_id, email):
+    _ensure_soulmate_dir()
+    if user_id and email:
+        user_path = os.path.join(SOULMATE_IMAGE_DIR, f"{user_id}.quiz.json")
+        email_path = os.path.join(SOULMATE_IMAGE_DIR, f"{_safe_email_key(email)}.quiz.json")
+        if not os.path.exists(user_path) and os.path.exists(email_path):
+            try:
+                os.rename(email_path, user_path)
+            except Exception:
+                pass
+        if os.path.exists(user_path):
+            return user_path
+    for path in _quiz_file_paths(user_id, email):
         if os.path.exists(path):
             return path
     return None
@@ -399,6 +426,28 @@ def _format_quiz_context(quiz):
                 lines.append(value_text)
         return '\n'.join([line for line in lines if line])
     return str(quiz).strip()
+
+
+def _has_quiz_payload(quiz) -> bool:
+    if quiz is None:
+        return False
+    if isinstance(quiz, str):
+        return bool(quiz.strip())
+    if isinstance(quiz, (list, dict)):
+        return len(quiz) > 0
+    return True
+
+
+def _load_quiz_payload(user_id, email):
+    path = _find_quiz_file(user_id, email)
+    if not path:
+        return None
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            payload = json.load(handle)
+    except Exception:
+        return None
+    return payload if _has_quiz_payload(payload) else None
 
 
 def _extract_response_text(data):
@@ -724,6 +773,8 @@ def _queue_soulmate_generation(user_id, email, prompt=None, quiz=None):
         return False
     quiz_context = _format_quiz_context(quiz)
     _ensure_soulmate_dir()
+    if _has_quiz_payload(quiz):
+        _write_json_file(os.path.join(SOULMATE_IMAGE_DIR, f"{key}.quiz.json"), quiz)
     image_path = os.path.join(SOULMATE_IMAGE_DIR, f"{key}.png")
     if os.path.exists(image_path):
         return True
@@ -927,6 +978,9 @@ def soulmate_status():
         return jsonify({"status": "ready", "image_url": "/api/soulmate-image"})
     if _is_soulmate_processing(user_id, email):
         return jsonify({"status": "processing"})
+    quiz_path = _find_quiz_file(user_id, email)
+    if not quiz_path:
+        return jsonify({"status": "no_quiz"})
     return jsonify({"status": "missing"})
 
 
@@ -951,6 +1005,10 @@ def soulmate_generate():
     data = request.get_json(silent=True) or {}
     prompt = (data.get('prompt') or '').strip()
     quiz = data.get('quiz') or data.get('answers')
+    if not _has_quiz_payload(quiz):
+        quiz = _load_quiz_payload(user.get('id'), user.get('email'))
+    if not _has_quiz_payload(quiz):
+        return jsonify({"status": "no_quiz"}), 409
     queued = _queue_soulmate_generation(user.get('id'), user.get('email'), prompt or None, quiz)
     return jsonify({"status": "queued" if queued else "skipped"})
 

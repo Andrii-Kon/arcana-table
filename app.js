@@ -2508,6 +2508,10 @@ const loadSoulmate = async () => {
       return;
     }
     const data = await response.json();
+    if (data.status === 'no_quiz') {
+      soulmatePanel.hidden = true;
+      return;
+    }
     soulmatePanel.hidden = false;
     if (data.status === 'ready' && data.image_url) {
       if (soulmateImage) {
