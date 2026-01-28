@@ -2433,7 +2433,24 @@ const authResetSend = document.querySelector('[data-auth-reset-send]');
 const soulmatePanel = document.getElementById('soulmatePanel');
 const soulmateImage = document.getElementById('soulmateImage');
 const soulmateStatus = document.getElementById('soulmateStatus');
+const soulmateModal = document.getElementById('soulmateModal');
+const soulmateTriggers = Array.from(document.querySelectorAll('[data-soulmate-trigger]'));
 let soulmateRequested = false;
+
+const setSoulmateTriggerVisibility = (isVisible) => {
+  if (!soulmateTriggers.length) return;
+  soulmateTriggers.forEach((trigger) => {
+    trigger.hidden = !isVisible;
+    trigger.setAttribute('aria-hidden', String(!isVisible));
+    if (!isVisible) {
+      trigger.tabIndex = -1;
+    } else {
+      trigger.removeAttribute('tabindex');
+    }
+  });
+};
+
+setSoulmateTriggerVisibility(false);
 
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
@@ -2500,17 +2517,17 @@ const requestSoulmateGeneration = async () => {
 };
 
 const loadSoulmate = async () => {
-  if (!soulmatePanel) return;
+  if (!soulmatePanel) return false;
   try {
     const response = await fetch('/api/soulmate', { credentials: 'same-origin' });
     if (!response.ok) {
       soulmatePanel.hidden = true;
-      return;
+      return false;
     }
     const data = await response.json();
     if (data.status === 'no_quiz') {
       soulmatePanel.hidden = true;
-      return;
+      return false;
     }
     soulmatePanel.hidden = false;
     if (data.status === 'ready' && data.image_url) {
@@ -2519,19 +2536,61 @@ const loadSoulmate = async () => {
         soulmateImage.src = data.image_url;
       }
       setSoulmateStatus('');
-      return;
+      return true;
     }
     if (soulmateImage) soulmateImage.hidden = true;
     if (data.status === 'processing') {
       setSoulmateStatus('Your soulmate portrait is being prepared...');
-      return;
+      return true;
     }
     setSoulmateStatus('We are preparing your soulmate portrait.');
     await requestSoulmateGeneration();
+    return true;
   } catch (error) {
     soulmatePanel.hidden = true;
+    return false;
   }
 };
+
+const openSoulmateModal = async () => {
+  if (!soulmateModal) return;
+  openModal(soulmateModal);
+  if (soulmatePanel) {
+    soulmatePanel.hidden = false;
+  }
+  if (soulmateImage) {
+    soulmateImage.hidden = true;
+  }
+  setSoulmateStatus('Loading your soulmate portrait...');
+  const isReady = await loadSoulmate();
+  if (!isReady) {
+    closeModal(soulmateModal);
+  }
+};
+
+const closeSoulmateModal = () => {
+  if (!soulmateModal) return;
+  closeModal(soulmateModal);
+};
+
+if (soulmateModal) {
+  const closeTargets = soulmateModal.querySelectorAll('[data-soulmate-close]');
+  closeTargets.forEach((target) => {
+    target.addEventListener('click', closeSoulmateModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !soulmateModal.hidden) {
+      closeSoulmateModal();
+    }
+  });
+}
+
+if (soulmateTriggers.length) {
+  soulmateTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', openSoulmateModal);
+  });
+}
 
 const refreshAuthUI = async () => {
   if (!authTrigger) return;
@@ -2575,7 +2634,8 @@ const refreshAuthUI = async () => {
     await syncServerSession(session.access_token);
     document.body.classList.remove('auth-locked');
     closeAuthModal();
-    loadSoulmate();
+    const hasSoulmate = await loadSoulmate();
+    setSoulmateTriggerVisibility(hasSoulmate);
   } else {
     authTrigger.textContent = 'Sign in';
     authTrigger.classList.remove('is-authenticated');
@@ -2593,6 +2653,7 @@ const refreshAuthUI = async () => {
     if (authDisplayEmail) authDisplayEmail.hidden = true;
     setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
+    setSoulmateTriggerVisibility(false);
     window.location.href = '/auth';
   }
 };

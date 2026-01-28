@@ -139,6 +139,58 @@ body::before {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+.soulmate-trigger {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 4px;
+  padding: 12px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 26, 22, 0.22);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(209, 126, 151, 0.28), transparent 55%),
+    linear-gradient(150deg, rgba(255, 244, 238, 0.98), rgba(236, 207, 207, 0.95));
+  box-shadow:
+    0 12px 22px rgba(30, 26, 22, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  color: rgba(30, 26, 22, 0.75);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.soulmate-trigger::before {
+  content: '';
+  position: absolute;
+  inset: 6px 12px auto 12px;
+  height: 40%;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), transparent);
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.soulmate-trigger__title {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(30, 26, 22, 0.75);
+}
+
+.soulmate-trigger__subtitle {
+  font-size: 1rem;
+  color: rgba(30, 26, 22, 0.75);
+}
+
+.soulmate-trigger:hover {
+  transform: translateY(-1px);
+  color: rgba(30, 26, 22, 0.9);
+  box-shadow:
+    0 16px 28px rgba(30, 26, 22, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
 .auth-trigger {
   font-family: 'Cinzel', 'Times New Roman', serif;
   text-transform: uppercase;
@@ -297,11 +349,13 @@ body::before {
 }
 
 .soulmate-card {
-  width: min(100%, 960px);
+  width: min(100%, 820px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
-  gap: 28px;
-  padding: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  margin: 0 auto;
   border-radius: 28px;
   border: 1px solid rgba(198, 168, 105, 0.22);
   background:
@@ -330,21 +384,30 @@ body::before {
   color: rgba(30, 26, 22, 0.7);
 }
 
+.soulmate-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-start;
+}
+
 .soulmate-media {
   display: grid;
   place-items: center;
-  padding: 12px;
+  width: clamp(180px, 26vw, 240px);
+  aspect-ratio: 1 / 1;
+  padding: 10px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.65);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  min-height: 240px;
+  min-height: 0;
 }
 
 .soulmate-image {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   border-radius: 18px;
+  object-fit: cover;
   box-shadow: 0 16px 30px rgba(30, 26, 22, 0.16);
 }
 
@@ -374,6 +437,11 @@ body::before {
   overflow: auto;
   padding: 22px;
   z-index: 1;
+}
+
+.soulmate-modal .modal__dialog {
+  width: min(880px, 92vw);
+  padding: 16px;
 }
 
 .daily-card {
@@ -1090,6 +1158,39 @@ body.auth-locked [data-auth-close] {
     display: none;
   }
 
+  .soulmate-trigger {
+    order: 4;
+    width: 100%;
+    align-self: stretch;
+    display: grid;
+    gap: 4px;
+    justify-items: start;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px dashed rgba(30, 26, 22, 0.22);
+    border-left: 4px solid rgba(209, 126, 151, 0.75);
+    background: linear-gradient(145deg, rgba(255, 246, 240, 0.98), rgba(235, 208, 208, 0.95));
+    box-shadow:
+      0 12px 18px rgba(30, 26, 22, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    text-align: left;
+  }
+
+  .soulmate-trigger__title {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+  }
+
+  .soulmate-trigger__subtitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: none;
+  }
+
+  .soulmate-trigger::before {
+    display: none;
+  }
+
   .daily-trigger--attention::after {
     inset: -3px;
     border-radius: 16px;
@@ -1219,17 +1320,25 @@ body.auth-locked [data-auth-close] {
     color: rgba(30, 26, 22, 0.6);
   }
 
+  .site-nav .soulmate-trigger {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(30, 26, 22, 0.15);
+    color: rgba(30, 26, 22, 0.6);
+  }
+
   .site-nav .menu-item::before {
     display: none;
   }
 
   .site-nav .menu-item .daily-trigger__subtitle,
-  .site-nav .menu-item .magic-trigger__subtitle {
+  .site-nav .menu-item .magic-trigger__subtitle,
+  .site-nav .menu-item .soulmate-trigger__subtitle {
     display: none;
   }
 
   .site-nav .menu-item .daily-trigger__title,
-  .site-nav .menu-item .magic-trigger__title {
+  .site-nav .menu-item .magic-trigger__title,
+  .site-nav .menu-item .soulmate-trigger__title {
     font-size: 0.6rem;
     letter-spacing: 0.16em;
     color: rgba(30, 26, 22, 0.7);
@@ -2118,11 +2227,14 @@ footer {
   }
 
   .soulmate-card {
+    width: min(100%, 640px);
     grid-template-columns: 1fr;
   }
 
   .soulmate-media {
-    min-height: 200px;
+    width: min(260px, 70vw);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
   }
 }
 

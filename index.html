@@ -47,6 +47,18 @@
               <span class="magic-trigger__title">Magic ball</span>
               <span class="magic-trigger__subtitle">Shake to answer</span>
             </button>
+
+            <button
+              class="soulmate-trigger menu-item"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="soulmateModal"
+              data-soulmate-trigger
+              hidden
+            >
+              <span class="soulmate-trigger__title">Your soulmate</span>
+              <span class="soulmate-trigger__subtitle">View portrait</span>
+            </button>
           </div>
 
           <div class="site-nav__center">
@@ -103,26 +115,6 @@
               </button>
             </div>
             <p id="spread-desc" class="spread-desc"></p>
-          </div>
-        </section>
-
-        <section id="soulmatePanel" class="soulmate-panel" hidden>
-          <div class="soulmate-card">
-            <div class="soulmate-copy">
-              <h2>Your soulmate portrait</h2>
-              <p class="soulmate-subtitle">Generated just for you.</p>
-              <p id="soulmateStatus" class="soulmate-status">Preparing your portrait...</p>
-            </div>
-            <div class="soulmate-media">
-              <img
-                id="soulmateImage"
-                class="soulmate-image"
-                src=""
-                alt="Your soulmate portrait"
-                loading="lazy"
-                hidden
-              />
-            </div>
           </div>
         </section>
 
@@ -1079,6 +1071,41 @@
               <button class="secondary-btn" type="button" data-magic-close>Close</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div
+        id="soulmateModal"
+        class="modal soulmate-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="soulmateTitle"
+        hidden
+      >
+        <div class="modal__overlay" data-soulmate-close></div>
+        <div class="modal__dialog" role="document">
+          <section id="soulmatePanel" class="soulmate-panel" hidden>
+            <div class="soulmate-card">
+              <div class="soulmate-copy">
+                <h2 id="soulmateTitle">Your soulmate portrait</h2>
+                <p class="soulmate-subtitle">Generated just for you.</p>
+                <p id="soulmateStatus" class="soulmate-status">Preparing your portrait...</p>
+                <div class="soulmate-actions">
+                  <button class="secondary-btn" type="button" data-soulmate-close>Close</button>
+                </div>
+              </div>
+              <div class="soulmate-media">
+                <img
+                  id="soulmateImage"
+                  class="soulmate-image"
+                  src=""
+                  alt="Your soulmate portrait"
+                  loading="lazy"
+                  hidden
+                />
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
