@@ -1588,13 +1588,18 @@ const syncViewFromHash = () => {
   setActiveView(viewSections.has('tarot') ? 'tarot' : viewSections.keys().next().value);
 };
 
+const setViewHash = (viewId) => {
+  const { pathname, search } = window.location;
+  history.replaceState(null, '', `${pathname}${search}#${viewId}`);
+};
+
 if (viewButtons.length > 0) {
   viewButtons.forEach((button) => {
     button.addEventListener('click', () => {
       const viewId = button.dataset.view;
       setActiveView(viewId);
       if (viewId) {
-        history.replaceState(null, '', `#${viewId}`);
+        setViewHash(viewId);
       }
     });
   });
@@ -2962,7 +2967,7 @@ if (authMenuViewButtons.length) {
       const viewId = btn.dataset.authView;
       if (!viewId) return;
       setActiveView(viewId);
-      history.replaceState(null, '', `#${viewId}`);
+      setViewHash(viewId);
       closeAuthMenu();
     });
   });
