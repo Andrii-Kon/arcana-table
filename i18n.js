@@ -1776,6 +1776,15 @@
     }
   };
 
+  const getPathLang = () => {
+    try {
+      const match = window.location.pathname.match(/^\/(uk)(?=\/|$)/);
+      return match ? match[1] : null;
+    } catch (error) {
+      return null;
+    }
+  };
+
   const getStoredLang = () => {
     try {
       return localStorage.getItem(STORAGE_KEY);
@@ -1800,7 +1809,11 @@
   };
 
   let currentLang =
-    normalizeLang(getQueryLang()) || normalizeLang(getStoredLang()) || normalizeLang(getBrowserLang()) || 'en';
+    normalizeLang(getPathLang()) ||
+    normalizeLang(getQueryLang()) ||
+    normalizeLang(getStoredLang()) ||
+    normalizeLang(getBrowserLang()) ||
+    'en';
 
   const t = (key, vars) => {
     const value = getPathValue(currentLang, key) ?? getPathValue('en', key);
@@ -1862,7 +1875,13 @@
     if (options.updateUrl) {
       try {
         const url = new URL(window.location.href);
-        url.searchParams.set('lang', currentLang);
+        const path = url.pathname.replace(/^\/(uk)(?=\/|$)/, '') || '/';
+        if (currentLang === 'uk') {
+          url.pathname = `/uk${path === '/' ? '' : path}`;
+        } else {
+          url.pathname = path;
+        }
+        url.searchParams.delete('lang');
         window.history.replaceState({}, document.title, url.toString());
       } catch (error) {
         // Ignore URL errors.

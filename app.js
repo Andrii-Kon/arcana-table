@@ -1,5 +1,11 @@
+const stripLangPrefix = (path) => {
+  const stripped = path.replace(/^\/(uk)(?=\/|$)/, '');
+  return stripped || '/';
+};
+
+const normalizedPath = stripLangPrefix(window.location.pathname);
 const isAuthRoute = ['/auth', '/forget-password', '/reset-password'].some((route) =>
-  window.location.pathname.startsWith(route)
+  normalizedPath.startsWith(route)
 );
 
 if (isAuthRoute) {
@@ -15,6 +21,12 @@ if (isAuthRoute) {
   const t = (key, vars) => (typeof i18n.t === 'function' ? i18n.t(key, vars) : key);
   const tList = (key) => (typeof i18n.list === 'function' ? i18n.list(key) : []);
   const getLang = () => (typeof i18n.getLanguage === 'function' ? i18n.getLanguage() : 'en');
+  const getLangPrefix = () => (getLang() === 'uk' ? '/uk' : '');
+  const withLangPrefix = (path) => {
+    const base = getLangPrefix();
+    const normalized = path === '/' ? '' : path.startsWith('/') ? path : `/${path}`;
+    return `${base}${normalized}` || '/';
+  };
   const getLocale = () => {
     return getLang() === 'uk' ? 'uk-UA' : 'en-US';
   };
@@ -2542,7 +2554,7 @@ let soulmateRequested = false;
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 const SUPABASE_REDIRECT =
-  window.SUPABASE_REDIRECT || `${window.location.origin}/auth/callback`;
+  window.SUPABASE_REDIRECT || `${window.location.origin}${withLangPrefix('/auth/callback')}`;
 
 const getEmailInitial = (email, fallback) => {
   const source = String(email || fallback || '').trim();
@@ -2627,7 +2639,7 @@ const performSignOut = async () => {
   closeAuthMenu();
   await supabaseClient.auth.signOut();
   await fetch('/api/logout', { method: 'POST' });
-  window.location.href = '/auth';
+  window.location.href = withLangPrefix('/auth');
 };
 
 const hasSupabaseConfig = () => {
@@ -2775,9 +2787,9 @@ if (soulmateTriggers.length) {
 
 const refreshAuthUI = async () => {
   if (!authTrigger) return;
-  if (window.location.pathname.startsWith('/auth')) return;
-  if (window.location.pathname.startsWith('/forget-password')) return;
-  if (window.location.pathname.startsWith('/reset-password')) return;
+  if (stripLangPrefix(window.location.pathname).startsWith('/auth')) return;
+  if (stripLangPrefix(window.location.pathname).startsWith('/forget-password')) return;
+  if (stripLangPrefix(window.location.pathname).startsWith('/reset-password')) return;
   if (!supabaseClient) {
     authTrigger.textContent = t('nav.auth.signin');
     authTrigger.disabled = true;
@@ -2846,7 +2858,7 @@ const refreshAuthUI = async () => {
     if (authDisplayEmail) authDisplayEmail.hidden = true;
     setAuthStatus('');
     if (authSignOut) authSignOut.hidden = true;
-    window.location.href = '/auth';
+    window.location.href = withLangPrefix('/auth');
   }
 };
 
@@ -2858,7 +2870,7 @@ const handleAuthRedirect = async () => {
   if (url.searchParams.get('code')) {
     const { error } = await supabaseClient.auth.exchangeCodeForSession(currentUrl);
     if (!error) {
-      window.history.replaceState({}, document.title, '/');
+      window.history.replaceState({}, document.title, withLangPrefix('/'));
     }
     return;
   }
@@ -2867,17 +2879,17 @@ const handleAuthRedirect = async () => {
     if (supabaseClient.auth.getSessionFromUrl) {
       await supabaseClient.auth.getSessionFromUrl();
     }
-    window.history.replaceState({}, document.title, '/');
+    window.history.replaceState({}, document.title, withLangPrefix('/'));
   }
 };
 
 const openAuthModal = () => {
   if (!authModal) {
-    window.location.href = '/auth';
+    window.location.href = withLangPrefix('/auth');
     return;
   }
   if (!authTrigger || !authTrigger.classList.contains('is-authenticated')) {
-    window.location.href = '/auth';
+    window.location.href = withLangPrefix('/auth');
     return;
   }
   setAuthStatus('');

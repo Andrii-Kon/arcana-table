@@ -275,7 +275,15 @@ def is_authenticated(req) -> bool:
     return verify_access_token(token)
 
 
+def strip_lang_prefix(path: str) -> str:
+    if path == '/uk' or path.startswith('/uk/'):
+        stripped = path[3:]
+        return stripped or '/'
+    return path
+
+
 def is_auth_allowed(path: str) -> bool:
+    path = strip_lang_prefix(path)
     if path.startswith('/auth'):
         return True
     if path in ['/styles.css', '/magic-layer.css', '/config.js', '/i18n.js', '/auth.js', '/favicon.ico']:
@@ -309,7 +317,8 @@ def _get_default_redirect_url():
     if redirect_url:
         return redirect_url
     try:
-        return request.url_root.rstrip('/') + '/auth/callback'
+        prefix = '/uk' if request.path.startswith('/uk') else ''
+        return request.url_root.rstrip('/') + f'{prefix}/auth/callback'
     except Exception:
         return ''
 
@@ -807,14 +816,25 @@ def require_auth():
         return None
     if is_authenticated(request):
         return None
-    if request.path.startswith('/api/'):
+    if strip_lang_prefix(request.path).startswith('/api/'):
         return jsonify({"status": "unauthorized"}), 401
+    if request.path.startswith('/uk'):
+        return redirect('/uk/auth', code=302)
     return redirect('/auth', code=302)
 
 
 @app.route('/', methods=['GET'])
 def serve_tarot_index():
     """Главная страница Таро"""
+    if not is_authenticated(request):
+        return send_from_directory(ROOT_DIR, 'auth.html')
+    return send_from_directory(ROOT_DIR, 'index.html')
+
+
+@app.route('/uk', methods=['GET'])
+@app.route('/uk/', methods=['GET'])
+def serve_tarot_index_uk():
+    """Головна сторінка Таро (UK префікс)."""
     if not is_authenticated(request):
         return send_from_directory(ROOT_DIR, 'auth.html')
     return send_from_directory(ROOT_DIR, 'index.html')
@@ -860,9 +880,21 @@ def serve_auth_page():
     return send_from_directory(ROOT_DIR, 'auth.html')
 
 
+@app.route('/uk/auth', methods=['GET'])
+@app.route('/uk/auth/', methods=['GET'])
+def serve_auth_page_uk():
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
 @app.route('/forget-password', methods=['GET'])
 @app.route('/forget-password/', methods=['GET'])
 def serve_forgot_password_page():
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
+@app.route('/uk/forget-password', methods=['GET'])
+@app.route('/uk/forget-password/', methods=['GET'])
+def serve_forgot_password_page_uk():
     return send_from_directory(ROOT_DIR, 'auth.html')
 
 
@@ -871,10 +903,21 @@ def serve_reset_password_page(token):
     return send_from_directory(ROOT_DIR, 'auth.html')
 
 
+@app.route('/uk/reset-password/<path:token>', methods=['GET'])
+def serve_reset_password_page_uk(token):
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
 @app.route('/numerology', methods=['GET'])
 @app.route('/numerology/', methods=['GET'])
 def redirect_numerology_anchor():
     return redirect('/#numerology', code=302)
+
+
+@app.route('/uk/numerology', methods=['GET'])
+@app.route('/uk/numerology/', methods=['GET'])
+def redirect_numerology_anchor_uk():
+    return redirect('/uk/#numerology', code=302)
 
 
 @app.route('/numerology_static/', methods=['GET'])
@@ -893,6 +936,12 @@ def redirect_palmistry_anchor():
     return redirect('/#palmistry', code=302)
 
 
+@app.route('/uk/palmistry', methods=['GET'])
+@app.route('/uk/palmistry/', methods=['GET'])
+def redirect_palmistry_anchor_uk():
+    return redirect('/uk/#palmistry', code=302)
+
+
 @app.route('/palmistry_static/', methods=['GET'])
 def redirect_legacy_palmistry_root():
     return redirect('/#palmistry', code=302)
@@ -906,6 +955,13 @@ def serve_palmistry_assets(path):
 @app.route('/auth/callback/', methods=['GET'])
 def auth_callback():
     """Supabase magic-link callback."""
+    return send_from_directory(ROOT_DIR, 'auth.html')
+
+
+@app.route('/uk/auth/callback', methods=['GET'])
+@app.route('/uk/auth/callback/', methods=['GET'])
+def auth_callback_uk():
+    """Supabase magic-link callback (UK prefix)."""
     return send_from_directory(ROOT_DIR, 'auth.html')
 
 

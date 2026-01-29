@@ -3,10 +3,20 @@ const t = (key, vars) => (typeof i18n.t === 'function' ? i18n.t(key, vars) : key
 
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+const stripLangPrefix = (path) => {
+  const stripped = path.replace(/^\/(uk)(?=\/|$)/, '');
+  return stripped || '/';
+};
+const getLangPrefix = () => (window.location.pathname.startsWith('/uk') ? '/uk' : '');
+const withLangPrefix = (path) => {
+  const base = getLangPrefix();
+  const normalized = path === '/' ? '' : path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalized}` || '/';
+};
 const SUPABASE_REDIRECT =
-  window.SUPABASE_REDIRECT || `${window.location.origin}/auth/callback`;
+  window.SUPABASE_REDIRECT || `${window.location.origin}${withLangPrefix('/auth/callback')}`;
 const SUPABASE_RESET_REDIRECT =
-  window.SUPABASE_RESET_REDIRECT || `${window.location.origin}/auth`;
+  window.SUPABASE_RESET_REDIRECT || `${window.location.origin}${withLangPrefix('/auth')}`;
 
 const authForm = document.getElementById('authForm');
 const authNameWrap = document.querySelector('[data-auth-name]');
@@ -169,7 +179,7 @@ const handleAuthRoute = async () => {
 const handleAuthRedirect = async () => {
   const currentUrl = window.location.href;
   const url = new URL(currentUrl);
-  const isAuthPage = window.location.pathname.startsWith('/auth');
+  const isAuthPage = stripLangPrefix(window.location.pathname).startsWith('/auth');
   const hasAccessTokenHash = window.location.hash.includes('access_token=');
   const recoveryType = getRecoveryType();
   if (recoveryType === 'recovery' || (isAuthPage && hasAccessTokenHash && !recoveryType)) {
@@ -181,8 +191,8 @@ const handleAuthRedirect = async () => {
   if (hashToken) {
     const result = await syncServerSession(hashToken);
     if (result.ok) {
-      window.history.replaceState({}, document.title, '/auth/callback');
-      window.location.href = '/';
+      window.history.replaceState({}, document.title, withLangPrefix('/auth/callback'));
+      window.location.href = withLangPrefix('/');
       return;
     }
     setAuthStatus(t('auth.status.server_session_failed'));
@@ -202,7 +212,7 @@ const handleAuthRedirect = async () => {
         setAuthStatus(t('auth.status.server_session_failed'));
         return;
       }
-      window.location.href = '/';
+      window.location.href = withLangPrefix('/');
     }
     return;
   }
@@ -220,7 +230,7 @@ const handleAuthRedirect = async () => {
           setAuthStatus(t('auth.status.server_session_failed'));
           return;
         }
-        window.location.href = '/';
+        window.location.href = withLangPrefix('/');
       }
     }
   }
@@ -266,7 +276,7 @@ const refreshAuthUI = async () => {
       setAuthStatus(t('auth.status.server_session_failed'));
       return;
     }
-    window.location.href = '/';
+    window.location.href = withLangPrefix('/');
   } else {
     if (authTitle) authTitle.textContent = t('auth.page.title.signin');
     document.querySelectorAll('.auth-switch').forEach((line) => {
@@ -359,7 +369,7 @@ if (authForm) {
           setAuthStatus(t('auth.status.server_session_failed'));
           return;
         }
-        window.location.href = '/';
+        window.location.href = withLangPrefix('/');
         return;
       }
 
@@ -388,7 +398,7 @@ if (authForm) {
         setAuthStatus(t('auth.status.server_session_failed'));
         return;
       }
-      window.location.href = '/';
+      window.location.href = withLangPrefix('/');
     }
   });
 }
@@ -502,7 +512,7 @@ if (authResetUpdate) {
     setRecoveryPending(false);
     await supabaseClient.auth.signOut();
     if (setMode) setMode('signin');
-    window.location.href = '/auth';
+    window.location.href = withLangPrefix('/auth');
   });
 }
 
@@ -518,6 +528,6 @@ if (authResetBack) {
       }
     }
     if (setMode) setMode('signin');
-    window.location.href = '/auth';
+    window.location.href = withLangPrefix('/auth');
   });
 }
