@@ -196,6 +196,7 @@ ASSETS_DIR = os.path.join(ROOT_DIR, 'assets')
 AUTH_HTML = os.path.join(ROOT_DIR, 'auth.html')
 CONFIG_JS = os.path.join(ROOT_DIR, 'config.js')
 AUTH_JS = os.path.join(ROOT_DIR, 'auth.js')
+I18N_JS = os.path.join(ROOT_DIR, 'i18n.js')
 
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '').strip()
@@ -277,7 +278,7 @@ def is_authenticated(req) -> bool:
 def is_auth_allowed(path: str) -> bool:
     if path.startswith('/auth'):
         return True
-    if path in ['/styles.css', '/magic-layer.css', '/config.js', '/auth.js', '/favicon.ico']:
+    if path in ['/styles.css', '/magic-layer.css', '/config.js', '/i18n.js', '/auth.js', '/favicon.ico']:
         return True
     if path == '/forget-password' or path.startswith('/forget-password/'):
         return True
@@ -835,6 +836,10 @@ def serve_tarot_app():
 @app.route('/config.js', methods=['GET'])
 def serve_config_js():
     return send_from_directory(ROOT_DIR, 'config.js')
+
+@app.route('/i18n.js', methods=['GET'])
+def serve_i18n_js():
+    return send_from_directory(ROOT_DIR, 'i18n.js')
 
 @app.route('/auth.js', methods=['GET'])
 def serve_auth_js():

@@ -11,16 +11,37 @@ if (isAuthRoute) {
       document.close();
     });
 } else {
+  const i18n = window.i18n || {};
+  const t = (key, vars) => (typeof i18n.t === 'function' ? i18n.t(key, vars) : key);
+  const tList = (key) => (typeof i18n.list === 'function' ? i18n.list(key) : []);
+  const getLang = () => (typeof i18n.getLanguage === 'function' ? i18n.getLanguage() : 'en');
+  const getLocale = () => {
+    return getLang() === 'uk' ? 'uk-UA' : 'en-US';
+  };
+  const getListFormatter = (() => {
+    let cachedLocale = null;
+    let cachedFormatter = null;
+    return () => {
+      if (typeof Intl === 'undefined' || typeof Intl.ListFormat !== 'function') return null;
+      const locale = getLocale();
+      if (!cachedFormatter || cachedLocale !== locale) {
+        cachedLocale = locale;
+        cachedFormatter = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' });
+      }
+      return cachedFormatter;
+    };
+  })();
+
   const SPREADS = {
   three: {
     id: 'three',
-    name: 'Past / Present / Future',
-    description: 'A quick read of your past, present, and future energy.',
+    nameKey: 'tarot.spreads.three.name',
+    descriptionKey: 'tarot.spreads.three.description',
     layout: 'three',
     positions: [
-      { label: 'Past', detail: 'What shaped this moment.' },
-      { label: 'Present', detail: 'Where you stand now.' },
-      { label: 'Future', detail: 'What is gathering ahead.' },
+      { key: 'Past', labelKey: 'tarot.positions.past.label', detailKey: 'tarot.positions.past.detail' },
+      { key: 'Present', labelKey: 'tarot.positions.present.label', detailKey: 'tarot.positions.present.detail' },
+      { key: 'Future', labelKey: 'tarot.positions.future.label', detailKey: 'tarot.positions.future.detail' },
     ],
   },
   // life: {
@@ -36,38 +57,71 @@ if (isAuthRoute) {
   // },
   horseshoe: {
     id: 'horseshoe',
-    name: 'Horseshoe',
-    description: 'A seven-card arc that traces momentum and obstacles.',
+    nameKey: 'tarot.spreads.horseshoe.name',
+    descriptionKey: 'tarot.spreads.horseshoe.description',
     layout: 'horseshoe',
     positions: [
-      { label: 'Past', detail: 'The roots of the situation.', offset: -18 },
-      { label: 'Present', detail: 'The current energy.', offset: -12 },
-      { label: 'Hidden', detail: 'What is unseen or unconscious.', offset: -4 },
-      { label: 'Obstacles', detail: 'The tension to navigate.', offset: 6 },
-      { label: 'External', detail: 'Influences around you.', offset: -4 },
-      { label: 'Advice', detail: 'The best approach right now.', offset: -12 },
-      { label: 'Outcome', detail: 'Where the path may lead.', offset: -18 },
+      { key: 'Past', labelKey: 'tarot.positions.past.label', detailKey: 'tarot.positions.past.detail', offset: -18 },
+      { key: 'Present', labelKey: 'tarot.positions.present.label', detailKey: 'tarot.positions.present.detail', offset: -12 },
+      { key: 'Hidden', labelKey: 'tarot.positions.hidden.label', detailKey: 'tarot.positions.hidden.detail', offset: -4 },
+      { key: 'Obstacles', labelKey: 'tarot.positions.obstacles.label', detailKey: 'tarot.positions.obstacles.detail', offset: 6 },
+      { key: 'External', labelKey: 'tarot.positions.external.label', detailKey: 'tarot.positions.external.detail', offset: -4 },
+      { key: 'Advice', labelKey: 'tarot.positions.advice.label', detailKey: 'tarot.positions.advice.detail', offset: -12 },
+      { key: 'Outcome', labelKey: 'tarot.positions.outcome.label', detailKey: 'tarot.positions.outcome.detail', offset: -18 },
     ],
   },
   celtic: {
     id: 'celtic',
-    name: 'Celtic Cross',
-    description: 'A ten-card classic for deeper insight and layered themes.',
+    nameKey: 'tarot.spreads.celtic.name',
+    descriptionKey: 'tarot.spreads.celtic.description',
     layout: 'celtic',
     positions: [
-      { label: 'Present', detail: 'Situation at the center.', area: 'pos1' },
-      { label: 'Crossing', detail: 'The challenge crossing you.', area: 'pos2' },
-      { label: 'Conscious', detail: 'Crown or current focus.', area: 'pos3' },
-      { label: 'Subconscious', detail: 'Foundation below.', area: 'pos4' },
-      { label: 'Past', detail: 'What is leaving or behind.', area: 'pos5' },
-      { label: 'Near Future', detail: 'What approaches next.', area: 'pos6' },
-      { label: 'Self', detail: 'Where you are right now.', area: 'pos7' },
-      { label: 'Environment', detail: 'External influences.', area: 'pos8' },
-      { label: 'Hopes & Fears', detail: 'Inner tensions and wishes.', area: 'pos9' },
-      { label: 'Outcome', detail: 'The likely resolution.', area: 'pos10' },
+      { key: 'Present', labelKey: 'tarot.positions.present.label', detailKey: 'tarot.positions.present.detail', area: 'pos1' },
+      { key: 'Crossing', labelKey: 'tarot.positions.crossing.label', detailKey: 'tarot.positions.crossing.detail', area: 'pos2' },
+      { key: 'Conscious', labelKey: 'tarot.positions.conscious.label', detailKey: 'tarot.positions.conscious.detail', area: 'pos3' },
+      { key: 'Subconscious', labelKey: 'tarot.positions.subconscious.label', detailKey: 'tarot.positions.subconscious.detail', area: 'pos4' },
+      { key: 'Past', labelKey: 'tarot.positions.past.label', detailKey: 'tarot.positions.past.detail', area: 'pos5' },
+      { key: 'Near Future', labelKey: 'tarot.positions.near_future.label', detailKey: 'tarot.positions.near_future.detail', area: 'pos6' },
+      { key: 'Self', labelKey: 'tarot.positions.self.label', detailKey: 'tarot.positions.self.detail', area: 'pos7' },
+      { key: 'Environment', labelKey: 'tarot.positions.environment.label', detailKey: 'tarot.positions.environment.detail', area: 'pos8' },
+      { key: 'Hopes & Fears', labelKey: 'tarot.positions.hopes_fears.label', detailKey: 'tarot.positions.hopes_fears.detail', area: 'pos9' },
+      { key: 'Outcome', labelKey: 'tarot.positions.outcome.label', detailKey: 'tarot.positions.outcome.detail', area: 'pos10' },
     ],
   },
 };
+
+const mergeCardVariant = (baseVariant = {}, overlayVariant = {}) => {
+  if (!overlayVariant || typeof overlayVariant !== 'object') return baseVariant;
+  return {
+    ...baseVariant,
+    ...overlayVariant,
+    keywordsList: overlayVariant.keywordsList || baseVariant.keywordsList,
+    meanings: overlayVariant.meanings || baseVariant.meanings,
+    personalized_interpretation:
+      overlayVariant.personalized_interpretation || baseVariant.personalized_interpretation,
+    advice: overlayVariant.advice || baseVariant.advice,
+  };
+};
+
+const mergeCard = (card, overlay) => {
+  if (!overlay) return card;
+  return {
+    ...card,
+    upright: mergeCardVariant(card.upright, overlay.upright),
+    reversed: mergeCardVariant(card.reversed, overlay.reversed),
+    scene: overlay.scene || card.scene,
+    detail: overlay.detail || card.detail,
+    name: card.name, // keep English name as requested
+  };
+};
+
+const getCardsForLang = (lang) => {
+  const base = Array.isArray(window.TAROT_CARDS) ? window.TAROT_CARDS : [];
+  if (lang !== 'uk' || !window.TAROT_CARDS_UK) return base;
+  return base.map((card) => mergeCard(card, window.TAROT_CARDS_UK[card.id]));
+};
+
+let currentCards = getCardsForLang(getLang());
 
 const deckEl = document.getElementById('deck');
 const deckHintEl = document.getElementById('deck-hint');
@@ -81,13 +135,33 @@ const beginBtn = document.getElementById('begin');
 const revealAllBtn = document.getElementById('reveal-all');
 const spreadDescEl = document.getElementById('spread-desc');
 const spreadButtons = Array.from(document.querySelectorAll('[data-spread]'));
-let currentSpread = SPREADS.three;
+
+const buildSpread = (spreadId) => {
+  const base = SPREADS[spreadId];
+  if (!base) return null;
+  const positions = (base.positions || []).map((position) => ({
+    ...position,
+    label: t(position.labelKey),
+    detail: t(position.detailKey),
+  }));
+  return {
+    ...base,
+    name: t(base.nameKey),
+    description: t(base.descriptionKey),
+    positions,
+  };
+};
+
+let currentSpread = buildSpread('three') || SPREADS.three;
 let slots = [];
 let deck = [];
 let drawn = [];
 const allowReversed = false;
 let hasDealt = false;
 let isDealing = false;
+let lastStatus = null;
+let lastDeckHint = null;
+let lastSoulmateStatusKey = null;
 
 const shuffle = (items) => {
   const result = [...items];
@@ -117,7 +191,12 @@ const slugifyPosition = (label) =>
 
 const getPersonalizedInterpretation = (positionLabel, cardName) => {
   const key = slugifyPosition(positionLabel);
-  const byPos = window.PERSONALIZED_INTERPRETATIONS?.[key];
+  const lang = getLang();
+  const map =
+    lang === 'uk' && window.PERSONALIZED_INTERPRETATIONS_UK
+      ? window.PERSONALIZED_INTERPRETATIONS_UK
+      : window.PERSONALIZED_INTERPRETATIONS;
+  const byPos = map?.[key];
   if (!byPos) return '';
 
   if (byPos[cardName]) return byPos[cardName];
@@ -131,6 +210,11 @@ const getPersonalizedInterpretation = (positionLabel, cardName) => {
   const targetWithoutThe = withoutThe.toLowerCase();
   const foundKey2 = Object.keys(byPos).find((k) => k.toLowerCase() === targetWithoutThe);
   if (foundKey2) return byPos[foundKey2];
+
+  // Generic localized fallback
+  const genericKey = `tarot.personalized.${key}`;
+  const generic = t(genericKey, { card: cardName });
+  if (generic && generic !== genericKey) return generic;
 
   return '';
 };
@@ -500,25 +584,34 @@ const normalizeMeaningLead = (text) => {
 
 const formatKeywordList = (keywords) => {
   if (!keywords.length) return '';
-  const lowered = keywords.map((keyword) => keyword.toLowerCase());
+  const locale = getLocale();
+  const lowered = keywords.map((keyword) => String(keyword).toLocaleLowerCase(locale));
+  const formatter = getListFormatter();
+  if (formatter) {
+    try {
+      return formatter.format(lowered);
+    } catch (error) {
+      // Fall back to a simple join.
+    }
+  }
   if (lowered.length === 1) return lowered[0];
-  if (lowered.length === 2) return `${lowered[0]} and ${lowered[1]}`;
-  return `${lowered.slice(0, -1).join(', ')}, and ${lowered[lowered.length - 1]}`;
+  if (lowered.length === 2) return `${lowered[0]} ${t('common.and')} ${lowered[1]}`;
+  return `${lowered.slice(0, -1).join(', ')}, ${t('common.and')} ${lowered[lowered.length - 1]}`;
 };
 
 const formatKeywordsForDisplay = (keywords, mode) => {
   if (mode !== 'shadow') return keywords;
   return keywords.map((keyword) =>
-    hasNegativeCue(keyword) ? keyword : `Blocked ${keyword}`
+    hasNegativeCue(keyword) ? keyword : t('tarot.reading.blocked', { keyword })
   );
 };
 
 const buildReversedShadowNarrative = (card, positionLabel, keywords) => {
   const list = formatKeywordList(keywords);
   if (list) {
-    return `${card.name} points to an imbalance around ${list}.`;
+    return t('tarot.reading.shadow_list', { card: card.name, list });
   }
-  return `${card.name} signals an inward or blocked energy.`;
+  return t('tarot.reading.shadow_default', { card: card.name });
 };
 
 const buildAdviceForReading = (keywords, orientation, meaningText) => {
@@ -528,34 +621,10 @@ const buildAdviceForReading = (keywords, orientation, meaningText) => {
   const withTheme = (templates) =>
     templates.map((template) => template.replace('{theme}', theme));
 
-  const positiveTemplates = theme
-    ? withTheme([
-        'Choose one small step today that supports {theme}.',
-        'Let {theme} guide one practical decision this week.',
-        'Anchor {theme} with a simple, concrete action.',
-        'Commit to a steady action that strengthens {theme}.',
-      ])
-    : [];
-
-  const reversedTemplates = theme
-    ? withTheme([
-        'Rebalance {theme} by setting one clear boundary.',
-        'Ground {theme} with one small, steady action.',
-        'Bring {theme} back to basics with a simple next step.',
-      ])
-    : [];
-
-  const neutralTemplates = [
-    'Choose one small, concrete step and do it today.',
-    'Pick the simplest next action and follow through.',
-    'Name what matters most, then take one grounded step.',
-  ];
-
-  const cautionTemplates = [
-    'Pause, simplify, and focus on what you can control.',
-    'Create a boundary, then take one stabilizing step.',
-    'Name the pressure you feel and soften it with one small action.',
-  ];
+  const positiveTemplates = theme ? withTheme(tList('tarot.advice.positive')) : [];
+  const reversedTemplates = theme ? withTheme(tList('tarot.advice.reversed')) : [];
+  const neutralTemplates = tList('tarot.advice.neutral');
+  const cautionTemplates = tList('tarot.advice.caution');
 
   let pool = [];
   if (orientation === 'reversed') {
@@ -567,7 +636,8 @@ const buildAdviceForReading = (keywords, orientation, meaningText) => {
     pool = pool.concat(cautionTemplates);
   }
   const unique = Array.from(new Set(pool));
-  return unique.length ? pickRandom(unique) : 'Take one small, grounded step today.';
+  const fallback = t('tarot.advice.fallback') || 'Take one small, grounded step today.';
+  return unique.length ? pickRandom(unique) : fallback;
 };
 
 const normalizeInlineSecondPerson = (text) =>
@@ -584,32 +654,35 @@ const normalizeSentenceSecondPerson = (text) =>
       (_, preposition) => `${preposition} you`
     );
 
+const POSITION_LEAD_KEYS = new Map([
+  ['past', 'tarot.leads.past'],
+  ['present', 'tarot.leads.present'],
+  ['future', 'tarot.leads.future'],
+  ['near_future', 'tarot.leads.near_future'],
+  ['outcome', 'tarot.leads.outcome'],
+  ['conscious', 'tarot.leads.conscious'],
+  ['subconscious', 'tarot.leads.subconscious'],
+  ['crown', 'tarot.leads.crown'],
+  ['foundation', 'tarot.leads.foundation'],
+  ['crossing', 'tarot.leads.crossing'],
+  ['self', 'tarot.leads.self'],
+  ['environment', 'tarot.leads.environment'],
+  ['hopes_and_fears', 'tarot.leads.hopes_fears'],
+  ['advice', 'tarot.leads.advice'],
+  ['hidden', 'tarot.leads.hidden'],
+  ['obstacles', 'tarot.leads.obstacles'],
+  ['external', 'tarot.leads.external'],
+  ['love', 'tarot.leads.love'],
+  ['career', 'tarot.leads.career'],
+  ['finance', 'tarot.leads.finance'],
+]);
+
 const getPositionLead = (label) => {
-  const key = (label || '').toLowerCase().trim();
-  const map = new Map([
-    ['past', 'In your past, '],
-    ['present', 'Right now, '],
-    ['future', 'Ahead, '],
-    ['near future', 'In the near future, '],
-    ['outcome', 'If the current path continues, '],
-    ['conscious', 'On your mind, '],
-    ['subconscious', 'Under the surface, '],
-    ['crown', 'At the top of your mind, '],
-    ['foundation', 'At the root of this, '],
-    ['crossing', 'What is crossing you is that '],
-    ['self', 'How you are showing up is that '],
-    ['environment', 'Around you, '],
-    ['hopes & fears', 'In your hopes and fears, '],
-    ['advice', 'Your next best move is to notice that '],
-    ['hidden', 'What is hidden is that '],
-    ['obstacles', 'The obstacle here is that '],
-    ['external', 'From outside influences, '],
-    ['love', 'In love, '],
-    ['career', 'In career matters, '],
-    ['finance', 'With money and resources, '],
-  ]);
-  if (map.has(key)) return map.get(key);
-  return key ? `In the ${key} position, ` : 'In this position, ';
+  const key = slugifyPosition(label);
+  const leadKey = POSITION_LEAD_KEYS.get(key);
+  if (leadKey) return t(leadKey);
+  if (label) return t('tarot.leads.default', { position: label });
+  return t('tarot.leads.generic');
 };
 
 const buildPositionAwareInterpretation = (
@@ -641,6 +714,7 @@ const buildPositionAwareInterpretation = (
 const ensureClauseLead = (text) => {
   const trimmed = text.replace(/\s+/g, ' ').trim();
   if (!trimmed) return '';
+  if (getLang() !== 'en') return trimmed;
   if (/^(that|whether|if)\b/i.test(trimmed)) return trimmed;
   const firstWord = trimmed.split(/\s+/)[0]?.toLowerCase() || '';
   const needsThat = new Set([
@@ -709,8 +783,30 @@ const buildIntroText = (card, positionLabel, meaningText, keywords) => {
   return capitalizeFirst(cleaned);
 };
 
-const setStatus = (message) => {
+const setStatusText = (message) => {
+  if (!statusEl) return;
   statusEl.textContent = message;
+  lastStatus = { text: message };
+};
+
+const setStatusKey = (key, vars) => {
+  if (!statusEl) return;
+  const message = t(key, vars);
+  statusEl.textContent = message;
+  lastStatus = { key, vars };
+};
+
+const setDeckHintText = (message) => {
+  if (!deckHintEl) return;
+  deckHintEl.textContent = message;
+  lastDeckHint = { text: message };
+};
+
+const setDeckHintKey = (key, vars) => {
+  if (!deckHintEl) return;
+  const message = t(key, vars);
+  deckHintEl.textContent = message;
+  lastDeckHint = { key, vars };
 };
 
 const updateRevealAllState = () => {
@@ -771,11 +867,11 @@ const fitCelticToViewport = () => {
 
   const title = document.createElement('div');
   title.className = 'slot-title';
-  title.textContent = 'Queen of Pentacles (Reversed)';
+  title.textContent = `Queen of Pentacles (${t('tarot.reading.reversed')})`;
 
   const label = document.createElement('div');
   label.className = 'slot-label';
-  label.textContent = 'Hopes & Fears';
+  label.textContent = t('tarot.positions.hopes_fears.label');
 
   probeSlot.appendChild(probeCard);
   probeSlot.appendChild(title);
@@ -1068,8 +1164,9 @@ const renderReading = () => {
     const { card, orientation, narrative, scene, detail, prediction, keywords, keywordsMode } =
       entry;
     const position = currentSpread.positions[index];
-    const orientationLabel = orientation === 'reversed' ? 'Reversed' : '';
-    const keywordTitle = keywordsMode === 'shadow' ? 'Keywords (Shadow)' : 'Keywords';
+    const orientationLabel = orientation === 'reversed' ? t('tarot.reading.reversed') : '';
+    const keywordTitle =
+      keywordsMode === 'shadow' ? t('tarot.reading.keywords_shadow') : t('tarot.reading.keywords');
     const keywordList = formatKeywordsForDisplay(keywords, keywordsMode);
     const keywordChips = keywordList.length
       ? keywordList.map((keyword) => `<span class="keyword-chip">${keyword}</span>`).join('')
@@ -1086,8 +1183,8 @@ const renderReading = () => {
     const isScene = Boolean(scene);
     const secondaryLabel = isScene
       ? orientation === 'reversed'
-        ? 'Scene (Reversed lens): '
-        : 'Scene: '
+        ? t('tarot.reading.scene_reversed')
+        : t('tarot.reading.scene')
       : '';
     const secondaryClass =
       isScene && orientation === 'reversed'
@@ -1114,12 +1211,12 @@ const renderReading = () => {
         <h3>${position.label} (${card.name.toUpperCase()})</h3>
         <p class="reading-role">${position.detail}</p>
         ${orientationLabel ? `<p class="reading-orientation">${orientationLabel}</p>` : ''}
-        <p class="reading-section-title">General Interpretation</p>
+        <p class="reading-section-title">${t('tarot.reading.general')}</p>
         <p class="reading-paragraph">${narrative}</p>
         ${sceneBlock}
         ${keywordsBlock}
         <div class="reading-advice">
-          <h4>Personalized interpretation</h4>
+          <h4>${t('tarot.reading.personalized')}</h4>
           <p>${predictionText}</p>
         </div>
       </div>
@@ -1131,7 +1228,7 @@ const renderReading = () => {
 };
 
 const resetGame = () => {
-  deck = shuffle(window.TAROT_CARDS);
+  deck = shuffle(currentCards);
   drawn = [];
   hasDealt = false;
   isDealing = false;
@@ -1147,15 +1244,17 @@ const resetGame = () => {
   slotsEl.hidden = true;
   readingGridEl.innerHTML = '';
   readingEl.hidden = true;
-  setStatus(`Tap the deck to deal ${currentSpread.positions.length} cards.`);
-  deckHintEl.textContent = `Tap the deck to deal ${currentSpread.positions.length} cards`;
+  setStatusKey('tarot.status.tap_deck_deal', { count: currentSpread.positions.length });
+  setDeckHintKey('tarot.status.tap_deck_deal_short', { count: currentSpread.positions.length });
   deckEl.classList.add('ready');
   updateRevealAllState();
 };
 
-const buildDrawnEntry = (card, positionIndex) => {
+const buildDrawnEntry = (card, positionIndex, forcedOrientation) => {
   const position = currentSpread.positions[positionIndex];
-  const orientation = allowReversed && Math.random() < 0.3 ? 'reversed' : 'upright';
+  const positionKey = position?.key || position?.label || '';
+  const orientation =
+    forcedOrientation || (allowReversed && Math.random() < 0.3 ? 'reversed' : 'upright');
   const interpretation = card[orientation];
   // Use canonical meaning text for the "meaning" paragraph (position-independent).
   // Some cards have AI-style entries in `meanings[]`; `full` stays canonical.
@@ -1169,10 +1268,10 @@ const buildDrawnEntry = (card, positionIndex) => {
   const keywords = getKeywords(keywordSource);
   const keywordsMode = reversedUsesShadow ? 'shadow' : orientation;
   const narrative = reversedUsesShadow
-    ? buildReversedShadowNarrative(card, position.label, keywords)
-    : buildIntroText(card, position.label, meaningText, keywords);
+    ? buildReversedShadowNarrative(card, positionKey, keywords)
+    : buildIntroText(card, positionKey, meaningText, keywords);
   const prediction =
-    getPersonalizedInterpretation(position.label, card.name) || sentenceize(meaningText);
+    getPersonalizedInterpretation(positionKey, card.name) || sentenceize(meaningText);
   const scene = card.scene ? card.scene.trim() : '';
   const detail = card.detail ? card.detail.trim() : '';
   return {
@@ -1191,7 +1290,8 @@ const buildDrawnEntry = (card, positionIndex) => {
 const fillSlot = (slot, entry, dealIndex) => {
   const img = slot.querySelector('img');
   const title = slot.querySelector('.slot-title');
-  const orientationLabel = entry.orientation === 'reversed' ? ' (Reversed)' : '';
+  const orientationLabel =
+    entry.orientation === 'reversed' ? ` (${t('tarot.reading.reversed')})` : '';
 
   img.src = entry.card.image;
   img.alt = entry.card.name;
@@ -1234,8 +1334,8 @@ const startDealAnimation = () => {
   window.setTimeout(() => {
     slotsEl.classList.remove('is-dealing');
     isDealing = false;
-    setStatus('Cards dealt. Tap each card to reveal (tap deck to shuffle).');
-    deckHintEl.textContent = 'Tap cards to reveal — tap deck to shuffle';
+    setStatusKey('tarot.status.cards_dealt');
+    setDeckHintKey('tarot.status.tap_cards_reveal');
     updateRevealAllState();
   }, durationMs + staggerMs * Math.max(0, count - 1) + 40);
 };
@@ -1263,8 +1363,18 @@ const dealSpread = () => {
 
   hasDealt = true;
   deckEl.classList.remove('ready');
-  setStatus('Dealing...');
+  setStatusKey('tarot.status.dealing');
   startDealAnimation();
+};
+
+const rebuildDrawnEntries = () => {
+  if (!drawn.length) return;
+  drawn = drawn.map((entry, index) => {
+    const card = currentCards.find((c) => c.id === entry.card.id) || entry.card;
+    const position = currentSpread.positions[index];
+    const positionKey = position?.key || position?.label || '';
+    return buildDrawnEntry(card, index, entry.orientation || 'upright');
+  });
 };
 
 const revealSlot = (slot) => {
@@ -1276,11 +1386,11 @@ const revealSlot = (slot) => {
   const revealedCount = slots.filter((s) => s.classList.contains('revealed')).length;
   const total = currentSpread.positions.length;
   if (revealedCount < total) {
-    setStatus(`Revealed ${revealedCount} of ${total}. Keep going.`);
+    setStatusKey('tarot.status.revealed_progress', { revealed: revealedCount, total });
     return;
   }
 
-  setStatus('Reading complete. Reflect on the pattern.');
+  setStatusKey('tarot.status.reading_complete');
   renderReading();
 };
 
@@ -1292,8 +1402,8 @@ const shuffleAndReset = () => {
   }
 
   isDealing = true;
-  setStatus('Shuffling...');
-  deckHintEl.textContent = 'Shuffling...';
+  setStatusKey('tarot.status.shuffling');
+  setDeckHintKey('tarot.status.shuffling');
 
   const anyRevealed = slots.some((slot) => slot.classList.contains('revealed'));
   const unflipMs = anyRevealed ? 420 : 0;
@@ -1346,11 +1456,11 @@ const handleDeckActivate = () => {
 };
 
 const setSpread = (spreadId) => {
-  const nextSpread = SPREADS[spreadId];
-  if (!nextSpread) {
+  const baseSpread = SPREADS[spreadId];
+  if (!baseSpread) {
     return;
   }
-  currentSpread = nextSpread;
+  currentSpread = buildSpread(spreadId) || baseSpread;
   if (tableEl) {
     tableEl.dataset.spread = currentSpread.layout;
   }
@@ -1359,7 +1469,7 @@ const setSpread = (spreadId) => {
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
-  spreadDescEl.textContent = nextSpread.description;
+  spreadDescEl.textContent = currentSpread.description;
   resetGame();
   // Defer measurement so layout is up to date (grid column widths, padding, etc).
   requestAnimationFrame(() => {
@@ -1370,7 +1480,7 @@ const setSpread = (spreadId) => {
 
 beginBtn.addEventListener('click', () => {
   document.getElementById('game').scrollIntoView({ behavior: 'smooth' });
-  setStatus(`Tap the deck to begin your ${currentSpread.name} reading.`);
+  setStatusKey('tarot.status.begin_reading', { spread: currentSpread.name });
 });
 
 spreadButtons.forEach((button) => {
@@ -1536,7 +1646,7 @@ const getDailyInterpretation = (card, variant, seed) => {
 };
 
 const getDailyCardData = () => {
-  const cards = window.TAROT_CARDS || [];
+  const cards = currentCards || window.TAROT_CARDS || [];
   if (!Array.isArray(cards) || cards.length === 0) return null;
   const dateKey = getLocalDateKey();
   const baseSeed = hashString(dateKey);
@@ -1551,7 +1661,7 @@ const getDailyCardData = () => {
   const guidance =
     pickFromList(variant.advice, orientationSeed) ||
     pickFromList(card.upright?.advice, baseSeed) ||
-    'Choose one grounded action that honors your focus.';
+    t('daily.fallback.guidance');
   const interpretation = getDailyInterpretation(card, variant, baseSeed);
 
   return {
@@ -1584,7 +1694,7 @@ const setDailyCardContent = () => {
   if (!data) return;
 
   const now = new Date();
-  const dateLabel = now.toLocaleDateString('en-US', {
+  const dateLabel = now.toLocaleDateString(getLocale(), {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -1592,16 +1702,17 @@ const setDailyCardContent = () => {
 
   if (dailyCardDate) dailyCardDate.textContent = dateLabel;
   if (dailyCardName) {
-    dailyCardName.textContent = `${data.card.name}${data.orientation === 'reversed' ? ' (Reversed)' : ''}`;
+    dailyCardName.textContent = `${data.card.name}${data.orientation === 'reversed' ? t('daily.reversed') : ''}`;
   }
   if (dailyCardArcana) {
-    dailyCardArcana.textContent = data.card.arcana === 'major' ? 'Major Arcana' : 'Minor Arcana';
+    dailyCardArcana.textContent =
+      data.card.arcana === 'major' ? t('daily.arcana.major') : t('daily.arcana.minor');
   }
   if (dailyCardKeywords) {
-    dailyCardKeywords.textContent = data.keywordText || 'A quiet focus for today.';
+    dailyCardKeywords.textContent = data.keywordText || t('daily.fallback.keywords');
   }
   if (dailyCardMessage) {
-    dailyCardMessage.textContent = data.message || 'Let today be a gentle reset.';
+    dailyCardMessage.textContent = data.message || t('daily.fallback.message');
   }
   if (dailyCardGuidance) {
     dailyCardGuidance.textContent = data.guidance;
@@ -1610,7 +1721,7 @@ const setDailyCardContent = () => {
     dailyCardInterpretation.textContent = data.interpretation;
   }
   if (dailyCardInterpretationLabel) {
-    dailyCardInterpretationLabel.textContent = 'Personalized interpretation';
+    dailyCardInterpretationLabel.textContent = t('daily.interpretation_label');
   }
   if (dailyCardImage) {
     const mediaFigure = dailyCardImage.closest('figure');
@@ -1686,39 +1797,13 @@ if (dailyTriggers.length) {
   });
 }
 
-const MAGIC_RESPONSES = [
-  'Yes, but give it time.',
-  'No, and that is protection.',
-  'Lean into the next step.',
-  'Trust your instinct.',
-  'Wait for clearer signals.',
-  'A small yes opens a bigger door.',
-  'Choose the simpler path.',
-  'Now is not the moment.',
-  'Ask again after you rest.',
-  'Follow the spark, ignore the noise.',
-  'The answer is already near.',
-  'Let it unfold without force.',
-  'A shift is underway.',
-  'Release what is heavy.',
-  'Move gently, but move.',
-  'Protect your energy first.',
-  'A helpful ally appears soon.',
-  'You already know the answer.',
-  'Say no to protect the yes.',
-  'This is a good omen.',
-  'A pause will reveal more.',
-  'Listen, then act.',
-  'Take the risk with care.',
-  'Begin with the smallest action.',
-];
-
-const MAGIC_DEFAULT_ANSWER = 'Focus your question.';
-const MAGIC_DEFAULT_STATUS = 'Shake your phone or tap the orb to reveal a message.';
+const getMagicResponses = () => tList('magic.responses');
+const getMagicDefaultAnswer = () => t('magic.default_answer');
+const getMagicDefaultStatus = () => t('magic.status.default');
 const MAGIC_SHAKE_THRESHOLD = 18;
 const MAGIC_SHAKE_COOLDOWN = 900;
 const MAGIC_REVEAL_DELAY = 520;
-const MAGIC_PENDING_STATUS = 'The orb is listening...';
+const getMagicPendingStatus = () => t('magic.status.pending');
 
 const magicModal = document.getElementById('magicModal');
 const magicTriggers = Array.from(document.querySelectorAll('[data-magic-trigger]'));
@@ -2170,8 +2255,8 @@ const resetMagicLayer = () => {
     window.clearTimeout(magicRevealTimer);
     magicRevealTimer = null;
   }
-  setMagicAnswer(MAGIC_DEFAULT_ANSWER);
-  setMagicStatus(MAGIC_DEFAULT_STATUS);
+  setMagicAnswer(getMagicDefaultAnswer());
+  setMagicStatus(getMagicDefaultStatus());
   if (magicOrb) {
     magicOrb.classList.remove('is-revealed');
     magicOrb.classList.remove('is-revealing');
@@ -2201,7 +2286,7 @@ const revealMagicAnswer = (source) => {
     magicRevealTimer = null;
   }
   animateMagicOrb();
-  setMagicStatus(MAGIC_PENDING_STATUS);
+  setMagicStatus(getMagicPendingStatus());
   if (magicOrb) magicOrb.classList.add('is-revealing');
   magicRevealTimer = window.setTimeout(() => {
     magicRevealTimer = null;
@@ -2209,10 +2294,10 @@ const revealMagicAnswer = (source) => {
       magicOrb.classList.remove('is-revealing');
       magicOrb.classList.add('is-revealed');
     }
-    setMagicAnswer(pickRandom(MAGIC_RESPONSES));
-    setMagicStatus(
-      source === 'shake' ? 'The orb shifts. Ask again when ready.' : 'Ask again when ready.'
-    );
+    const responses = getMagicResponses();
+    setMagicAnswer(pickRandom(responses.length ? responses : [getMagicDefaultAnswer()]));
+    const statusKey = source === 'shake' ? 'magic.status.shake_again' : 'magic.status.tap_again';
+    setMagicStatus(t(statusKey));
   }, MAGIC_REVEAL_DELAY);
 };
 
@@ -2280,7 +2365,7 @@ const requestMagicMotionPermission = async () => {
 
 const initMagicMotion = async () => {
   if (!supportsMotion()) {
-    setMagicStatus('Tap the orb to reveal a message.');
+    setMagicStatus(t('magic.status.tap_orb'));
     if (magicEnableMotion) magicEnableMotion.hidden = true;
     return;
   }
@@ -2289,7 +2374,7 @@ const initMagicMotion = async () => {
     try {
       // Note: requestPermission can only be called from user gesture
       // So we show the button and let user click it
-      setMagicStatus('Enable motion or tap the orb to reveal a message.');
+      setMagicStatus(t('magic.status.enable_motion'));
       if (magicEnableMotion) magicEnableMotion.hidden = false;
       return;
     } catch (error) {
@@ -2297,7 +2382,7 @@ const initMagicMotion = async () => {
     }
   }
   attachMagicMotion();
-  setMagicStatus(MAGIC_DEFAULT_STATUS);
+  setMagicStatus(getMagicDefaultStatus());
   if (magicEnableMotion) magicEnableMotion.hidden = true;
 };
 
@@ -2314,7 +2399,7 @@ const setMobileMenuOpen = (isOpen) => {
   if (!siteNav || !mobileMenuToggle) return;
   siteNav.classList.toggle('is-open', isOpen);
   mobileMenuToggle.setAttribute('aria-expanded', String(isOpen));
-  mobileMenuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+  mobileMenuToggle.setAttribute('aria-label', isOpen ? t('nav.menu_close') : t('nav.menu'));
 };
 
 const closeMagicModal = () => {
@@ -2350,7 +2435,10 @@ if (mobileMenuToggle && siteNav) {
   });
   siteNav.addEventListener('click', (event) => {
     const target = event.target.closest('button, a');
-    if (target) setMobileMenuOpen(false);
+    if (!target) return;
+    if (authMenu && authMenu.contains(target)) return;
+    if (authMenuDropdown && authMenuDropdown.contains(target)) return;
+    setMobileMenuOpen(false);
   });
   document.addEventListener('click', (event) => {
     if (siteNav.contains(event.target) || mobileMenuToggle.contains(event.target)) return;
@@ -2399,11 +2487,11 @@ if (magicEnableMotion) {
       // Reset acceleration tracking when enabling motion
       lastMagicAccel = null;
       attachMagicMotion();
-      setMagicStatus(MAGIC_DEFAULT_STATUS);
+      setMagicStatus(getMagicDefaultStatus());
       magicEnableMotion.hidden = true;
       return;
     }
-    setMagicStatus('Motion access is off. Tap the orb to reveal a message.');
+    setMagicStatus(t('magic.status.motion_off'));
     magicEnableMotion.hidden = true;
   });
 }
@@ -2429,6 +2517,20 @@ const authReset = document.getElementById('authReset');
 const authResetEmail = document.getElementById('authResetEmail');
 const authForgot = document.querySelector('[data-auth-forgot]');
 const authResetSend = document.querySelector('[data-auth-reset-send]');
+const authTriggerI18nKey = authTrigger ? authTrigger.getAttribute('data-i18n') : '';
+const authMenu = document.getElementById('authMenu');
+const authMenuDropdown = document.getElementById('authMenuDropdown');
+const authMenuEmails = Array.from(document.querySelectorAll('.auth-menu__email'));
+const authMenuAccountButtons = Array.from(document.querySelectorAll('[data-auth-account]'));
+const authMenuSignOutButtons = Array.from(document.querySelectorAll('[data-auth-signout]'));
+const authMenuLangOptions = Array.from(document.querySelectorAll('.auth-menu__lang-option'));
+const authMenuViewButtons = Array.from(document.querySelectorAll('[data-auth-view]'));
+const authMenuActionButtons = Array.from(document.querySelectorAll('[data-auth-action]'));
+const mobileMenu = document.getElementById('mobileMenu');
+const mobileMenuAvatar = document.getElementById('mobileMenuAvatar');
+const mobileMenuEmail = document.getElementById('mobileMenuEmail');
+const mobileMenuSignIn = document.querySelector('.mobile-menu__signin');
+const mobileMenuAuthOnly = Array.from(document.querySelectorAll('.mobile-menu__auth-only'));
 
 const soulmatePanel = document.getElementById('soulmatePanel');
 const soulmateImage = document.getElementById('soulmateImage');
@@ -2441,6 +2543,92 @@ const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 const SUPABASE_REDIRECT =
   window.SUPABASE_REDIRECT || `${window.location.origin}/auth/callback`;
+
+const getEmailInitial = (email, fallback) => {
+  const source = String(email || fallback || '').trim();
+  if (!source) return '?';
+  return source.charAt(0).toUpperCase();
+};
+
+const setAuthTriggerInitial = (email, fallback) => {
+  if (!authTrigger) return;
+  const initial = getEmailInitial(email, fallback);
+  authTrigger.textContent = initial;
+  authTrigger.dataset.emailInitial = initial;
+  authTrigger.dataset.email = email || '';
+  authTrigger.removeAttribute('data-i18n');
+  authTrigger.title = email || t('nav.auth.account');
+  authTrigger.setAttribute(
+    'aria-label',
+    email ? `${t('nav.auth.account')}: ${email}` : t('nav.auth.account')
+  );
+};
+
+const clearAuthTriggerInitial = () => {
+  if (!authTrigger) return;
+  delete authTrigger.dataset.emailInitial;
+  delete authTrigger.dataset.email;
+  if (authTriggerI18nKey) {
+    authTrigger.setAttribute('data-i18n', authTriggerI18nKey);
+  }
+  authTrigger.title = '';
+  authTrigger.removeAttribute('aria-label');
+};
+
+const isDesktopNav = () =>
+  typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 981px)').matches;
+
+const setAuthMenuOpen = (open) => {
+  if (!authMenuDropdown || !authTrigger) return;
+  authMenuDropdown.hidden = !open;
+  authTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (authMenu) authMenu.classList.toggle('is-open', open);
+};
+
+const closeAuthMenu = () => setAuthMenuOpen(false);
+
+const setAuthMenuEmail = (email) => {
+  if (!authMenuEmails.length) return;
+  authMenuEmails.forEach((el) => {
+    el.textContent = email || '';
+    el.hidden = !email;
+  });
+};
+
+const setMobileMenuAuthState = (isLoggedIn, email, fallback) => {
+  if (!mobileMenu) return;
+  mobileMenu.classList.toggle('is-authenticated', isLoggedIn);
+  if (mobileMenuAvatar) {
+    mobileMenuAvatar.textContent = getEmailInitial(email, fallback);
+    mobileMenuAvatar.hidden = !isLoggedIn;
+  }
+  if (mobileMenuEmail) {
+    mobileMenuEmail.textContent = email || '';
+    mobileMenuEmail.hidden = !isLoggedIn;
+  }
+  if (mobileMenuSignIn) mobileMenuSignIn.hidden = isLoggedIn;
+  mobileMenuAuthOnly.forEach((el) => {
+    el.hidden = !isLoggedIn;
+  });
+};
+
+const updateAuthMenuLanguage = () => {
+  if (!authMenuLangOptions.length) return;
+  const current = getLang();
+  authMenuLangOptions.forEach((btn) => {
+    const isActive = btn.dataset.lang === current;
+    btn.classList.toggle('is-active', isActive);
+    btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+  });
+};
+
+const performSignOut = async () => {
+  if (!supabaseClient) return;
+  closeAuthMenu();
+  await supabaseClient.auth.signOut();
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/auth';
+};
 
 const hasSupabaseConfig = () => {
   return (
@@ -2484,6 +2672,12 @@ const setSoulmateStatus = (message) => {
   if (!soulmateStatus) return;
   soulmateStatus.textContent = message || '';
   soulmateStatus.hidden = !message;
+  if (!message) lastSoulmateStatusKey = null;
+};
+
+const setSoulmateStatusKey = (key) => {
+  lastSoulmateStatusKey = key;
+  setSoulmateStatus(t(key));
 };
 
 const requestSoulmateGeneration = async () => {
@@ -2513,7 +2707,7 @@ const loadSoulmate = async () => {
     if (data.status === 'no_quiz') {
       soulmatePanel.hidden = false;
       if (soulmateImage) soulmateImage.hidden = true;
-      setSoulmateStatus('Complete the quiz to unlock your soulmate portrait.');
+      setSoulmateStatusKey('soulmate.status.no_quiz');
       return true;
     }
     soulmatePanel.hidden = false;
@@ -2527,10 +2721,10 @@ const loadSoulmate = async () => {
     }
     if (soulmateImage) soulmateImage.hidden = true;
     if (data.status === 'processing') {
-      setSoulmateStatus('Your soulmate portrait is being prepared...');
+      setSoulmateStatusKey('soulmate.status.processing');
       return true;
     }
-    setSoulmateStatus('We are preparing your soulmate portrait.');
+    setSoulmateStatusKey('soulmate.status.generating');
     await requestSoulmateGeneration();
     return true;
   } catch (error) {
@@ -2548,7 +2742,7 @@ const openSoulmateModal = async () => {
   if (soulmateImage) {
     soulmateImage.hidden = true;
   }
-  setSoulmateStatus('Loading your soulmate portrait...');
+  setSoulmateStatusKey('soulmate.status.loading');
   const isReady = await loadSoulmate();
   if (!isReady) {
     closeModal(soulmateModal);
@@ -2585,9 +2779,14 @@ const refreshAuthUI = async () => {
   if (window.location.pathname.startsWith('/forget-password')) return;
   if (window.location.pathname.startsWith('/reset-password')) return;
   if (!supabaseClient) {
-    authTrigger.textContent = 'Sign in';
+    authTrigger.textContent = t('nav.auth.signin');
     authTrigger.disabled = true;
-    setAuthStatus('Supabase keys are missing.');
+    authTrigger.classList.remove('is-authenticated');
+    clearAuthTriggerInitial();
+    closeAuthMenu();
+    setAuthMenuEmail('');
+    setMobileMenuAuthState(false, '', '');
+    setAuthStatus(t('auth.status.supabase_missing'));
     return;
   }
 
@@ -2600,11 +2799,11 @@ const refreshAuthUI = async () => {
     const fullName =
       session.user.user_metadata?.full_name ||
       session.user.user_metadata?.name ||
-      'Account';
-    authTrigger.textContent = 'Account';
+      t('nav.auth.account');
+    setAuthTriggerInitial(email, fullName);
     authTrigger.classList.add('is-authenticated');
     if (authCard) authCard.classList.add('is-authenticated');
-    if (authTitle) authTitle.textContent = 'Account';
+    if (authTitle) authTitle.textContent = t('auth.modal.title.account');
     document.querySelectorAll('.auth-switch').forEach((line) => {
       line.hidden = true;
     });
@@ -2617,16 +2816,24 @@ const refreshAuthUI = async () => {
       authDisplayEmail.hidden = false;
       authDisplayEmail.textContent = email;
     }
+    setAuthMenuEmail(email);
+    setMobileMenuAuthState(true, email, fullName);
+    updateAuthMenuLanguage();
+    closeAuthMenu();
     if (authSignOut) authSignOut.hidden = false;
     await syncServerSession(session.access_token);
     document.body.classList.remove('auth-locked');
     closeAuthModal();
     await loadSoulmate();
   } else {
-    authTrigger.textContent = 'Sign in';
+    authTrigger.textContent = t('nav.auth.signin');
     authTrigger.classList.remove('is-authenticated');
+    clearAuthTriggerInitial();
+    closeAuthMenu();
+    setAuthMenuEmail('');
+    setMobileMenuAuthState(false, '', '');
     if (authCard) authCard.classList.remove('is-authenticated');
-    if (authTitle) authTitle.textContent = 'Login your account';
+    if (authTitle) authTitle.textContent = t('auth.page.title.signin');
     document.querySelectorAll('.auth-switch').forEach((line) => {
       if (line.classList.contains('auth-switch--signup')) {
         line.hidden = true;
@@ -2697,8 +2904,84 @@ if (authModal) {
 }
 
 if (authTrigger) {
-  authTrigger.addEventListener('click', openAuthModal);
+  authTrigger.addEventListener('click', (event) => {
+    if (authTrigger.classList.contains('is-authenticated') && authMenuDropdown) {
+      event.preventDefault();
+      event.stopPropagation();
+      setAuthMenuOpen(authMenuDropdown.hidden);
+      return;
+    }
+    openAuthModal();
+  });
 }
+
+if (authMenuAccountButtons.length) {
+  authMenuAccountButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      closeAuthMenu();
+      openAuthModal();
+    });
+  });
+}
+
+if (authMenuSignOutButtons.length) {
+  authMenuSignOutButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      await performSignOut();
+    });
+  });
+}
+
+if (authMenuLangOptions.length) {
+  authMenuLangOptions.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      if (!lang || !window.i18n || typeof window.i18n.setLanguage !== 'function') return;
+      window.i18n.setLanguage(lang, { updateUrl: true });
+      updateAuthMenuLanguage();
+      closeAuthMenu();
+    });
+  });
+}
+
+if (authMenuViewButtons.length) {
+  authMenuViewButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const viewId = btn.dataset.authView;
+      if (!viewId) return;
+      setActiveView(viewId);
+      history.replaceState(null, '', `#${viewId}`);
+      closeAuthMenu();
+    });
+  });
+}
+
+if (authMenuActionButtons.length) {
+  authMenuActionButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.authAction;
+      if (!action) return;
+      if (action === 'daily') openDailyModal();
+      if (action === 'magic') openMagicModal();
+      if (action === 'soulmate') openSoulmateModal();
+      closeAuthMenu();
+    });
+  });
+}
+
+document.addEventListener('click', (event) => {
+  if (!authMenuDropdown || authMenuDropdown.hidden) return;
+  if (authMenu && authMenu.contains(event.target)) return;
+  closeAuthMenu();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeAuthMenu();
+});
+
+window.addEventListener('resize', () => {
+  if (!isDesktopNav()) closeAuthMenu();
+});
 
 document.addEventListener('click', (event) => {
   const trigger = event.target.closest('[data-auth-open]');
@@ -2717,9 +3000,13 @@ if (authForm) {
     if (authReset) authReset.hidden = true;
     if (authForm) authForm.hidden = false;
     if (!showName && authNameInput) authNameInput.value = '';
-    if (authTitle) authTitle.textContent = showName ? 'Create an account' : 'Login your account';
+    if (authTitle) {
+      authTitle.textContent = showName ? t('auth.page.title.signup') : t('auth.page.title.signin');
+    }
     const submitBtn = authForm.querySelector('.auth-submit');
-    if (submitBtn) submitBtn.textContent = showName ? 'Sign up' : 'Login';
+    if (submitBtn) {
+      submitBtn.textContent = showName ? t('auth.page.submit.signup') : t('auth.page.submit.signin');
+    }
     document.querySelectorAll('.auth-switch').forEach((line) => {
       if (line.classList.contains('auth-switch--signup')) {
         line.hidden = !showName;
@@ -2732,6 +3019,21 @@ if (authForm) {
 
   setMode('signin');
 
+  const refreshAuthFormLocale = () => {
+    if (authCard && authCard.classList.contains('is-authenticated')) return;
+    if (authReset && !authReset.hidden) {
+      if (authTitle) authTitle.textContent = t('auth.page.reset.title');
+      return;
+    }
+    if (authVerify && !authVerify.hidden) {
+      if (authTitle) authTitle.textContent = t('auth.page.verify.title');
+      return;
+    }
+    setMode(authAction);
+  };
+
+  window.addEventListener('i18n:change', refreshAuthFormLocale);
+
   document.addEventListener('click', (event) => {
     const modeTarget = event.target.closest('[data-auth-mode]');
     if (!modeTarget) return;
@@ -2742,7 +3044,7 @@ if (authForm) {
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!supabaseClient) {
-      setAuthStatus('Supabase keys are missing.');
+      setAuthStatus(t('auth.status.supabase_missing'));
       return;
     }
 
@@ -2750,16 +3052,16 @@ if (authForm) {
     const password = authPasswordInput?.value || '';
     const name = authNameInput?.value.trim() || '';
     if (!email || !password) {
-      setAuthStatus('Enter a valid email and password.');
+      setAuthStatus(t('auth.status.enter_email_password'));
       return;
     }
 
     if (authAction === 'signup') {
       if (!name) {
-        setAuthStatus('Enter your name to create an account.');
+        setAuthStatus(t('auth.status.enter_name'));
         return;
       }
-      setAuthStatus('Creating your account...');
+      setAuthStatus(t('auth.status.creating_account'));
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -2782,11 +3084,11 @@ if (authForm) {
       if (authVerifyEmail) authVerifyEmail.textContent = maskEmail(email);
       if (authVerify) authVerify.hidden = false;
       authForm.hidden = true;
-      setAuthStatus('Check your email to confirm your account.');
+      setAuthStatus(t('auth.status.check_email'));
       return;
     }
 
-    setAuthStatus('Signing you in...');
+    setAuthStatus(t('auth.status.signing_in'));
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
@@ -2809,16 +3111,13 @@ if (authForgot) {
     if (authVerify) authVerify.hidden = true;
     if (authForm) authForm.hidden = true;
     if (authHint) authHint.hidden = true;
-    if (authTitle) authTitle.textContent = 'Reset your password';
+    if (authTitle) authTitle.textContent = t('auth.page.reset.title');
   });
 }
 
 if (authSignOut) {
   authSignOut.addEventListener('click', async () => {
-    if (!supabaseClient) return;
-    await supabaseClient.auth.signOut();
-    await fetch('/api/logout', { method: 'POST' });
-    window.location.href = '/auth';
+    await performSignOut();
   });
 }
 
@@ -2850,7 +3149,7 @@ if (authResend) {
   authResend.addEventListener('click', async () => {
     const email = authEmailInput?.value.trim();
     if (!email || !supabaseClient) return;
-    setAuthStatus('Resending verification link...');
+    setAuthStatus(t('auth.status.resend_link'));
     const { error } = await supabaseClient.auth.resend({
       type: 'signup',
       email,
@@ -2860,7 +3159,7 @@ if (authResend) {
       setAuthStatus(error.message);
       return;
     }
-    setAuthStatus('Verification link resent.');
+    setAuthStatus(t('auth.status.link_resent'));
   });
 }
 
@@ -2868,10 +3167,10 @@ if (authResetSend) {
   authResetSend.addEventListener('click', async () => {
     const email = authResetEmail?.value.trim() || authEmailInput?.value.trim();
     if (!email || !supabaseClient) {
-      setAuthStatus('Enter your email to reset the password.');
+      setAuthStatus(t('auth.status.enter_email_reset'));
       return;
     }
-    setAuthStatus('Sending reset link...');
+    setAuthStatus(t('auth.status.sending_reset'));
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
       redirectTo: SUPABASE_REDIRECT,
     });
@@ -2879,9 +3178,122 @@ if (authResetSend) {
       setAuthStatus(error.message);
       return;
     }
-    setAuthStatus('Password reset link sent. Check your email.');
+    setAuthStatus(t('auth.status.reset_sent'));
   });
 }
+
+const refreshMenuLabel = () => {
+  if (!siteNav || !mobileMenuToggle) return;
+  const isOpen = siteNav.classList.contains('is-open');
+  mobileMenuToggle.setAttribute('aria-label', isOpen ? t('nav.menu_close') : t('nav.menu'));
+};
+
+const refreshTarotLocale = () => {
+  const next = buildSpread(currentSpread?.id || 'three') || currentSpread;
+  if (next) {
+    currentSpread = next;
+    if (tableEl) tableEl.dataset.spread = currentSpread.layout;
+    if (spreadDescEl) spreadDescEl.textContent = currentSpread.description;
+  }
+
+  // Refresh deck content for the new language
+  deck = shuffle(currentCards);
+
+  // Rebuild drawn entries with translated card data
+  if (drawn.length) {
+    rebuildDrawnEntries();
+  }
+
+  if (slots.length === currentSpread.positions.length) {
+    slots.forEach((slot, index) => {
+      const position = currentSpread.positions[index];
+      const labelEl = slot.querySelector('.slot-label');
+      if (labelEl && position?.label) labelEl.textContent = position.label;
+      const entry = drawn[index];
+      if (entry) {
+        const titleEl = slot.querySelector('.slot-title');
+        if (titleEl) {
+          const orientationLabel =
+            entry.orientation === 'reversed' ? ` (${t('tarot.reading.reversed')})` : '';
+          titleEl.textContent = `${entry.card.name}${orientationLabel}`;
+        }
+      }
+    });
+  }
+
+  if (drawn.length && readingEl && readingGridEl && (!readingEl.hidden || readingGridEl.children.length)) {
+    renderReading();
+  }
+
+  if (lastStatus?.key) {
+    const vars = { ...(lastStatus.vars || {}) };
+    if (lastStatus.key === 'tarot.status.begin_reading') {
+      vars.spread = currentSpread.name;
+    }
+    setStatusKey(lastStatus.key, vars);
+  } else if (lastStatus?.text) {
+    setStatusText(lastStatus.text);
+  }
+
+  if (lastDeckHint?.key) {
+    setDeckHintKey(lastDeckHint.key, lastDeckHint.vars);
+  } else if (lastDeckHint?.text) {
+    setDeckHintText(lastDeckHint.text);
+  }
+
+  if (currentSpread.layout === 'horseshoe') {
+    primeHorseshoeCardSize();
+    if (hasDealt) layoutHorseshoe();
+  }
+  if (currentSpread.layout === 'celtic') {
+    fitCelticToViewport();
+  }
+};
+
+const refreshAuthLabels = () => {
+  if (!authTrigger) return;
+  if (authTrigger.classList.contains('is-authenticated')) {
+    const email = authTrigger.dataset.email || '';
+    const initial = authTrigger.dataset.emailInitial || getEmailInitial(email, '');
+    authTrigger.textContent = initial || t('nav.auth.account');
+    authTrigger.removeAttribute('data-i18n');
+    authTrigger.setAttribute(
+      'aria-label',
+      email ? `${t('nav.auth.account')}: ${email}` : t('nav.auth.account')
+    );
+    updateAuthMenuLanguage();
+    if (authTitle) authTitle.textContent = t('auth.modal.title.account');
+    return;
+  }
+  authTrigger.textContent = t('nav.auth.signin');
+  if (authReset && !authReset.hidden) {
+    if (authTitle) authTitle.textContent = t('auth.page.reset.title');
+    return;
+  }
+  if (authVerify && !authVerify.hidden) {
+    if (authTitle) authTitle.textContent = t('auth.page.verify.title');
+  }
+};
+
+const refreshLocaleUI = () => {
+  currentCards = getCardsForLang(getLang());
+
+  refreshMenuLabel();
+  refreshTarotLocale();
+  setDailyCardContent();
+  refreshAuthLabels();
+
+  if (magicModal && !magicModal.hidden) {
+    resetMagicLayer();
+    scheduleMagicAnswerFit();
+  }
+
+  if (lastSoulmateStatusKey) {
+    setSoulmateStatusKey(lastSoulmateStatusKey);
+  }
+};
+
+window.addEventListener('i18n:change', refreshLocaleUI);
 
 const preludeModal = document.getElementById('preludeModal');
 

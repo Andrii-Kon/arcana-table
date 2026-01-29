@@ -1,6 +1,9 @@
 // API базовый URL
 const API_BASE_URL = '';
 
+const i18n = window.i18n || {};
+const t = (key, vars) => (typeof i18n.t === 'function' ? i18n.t(key, vars) : key);
+
 // Элементы DOM
 const form = document.getElementById('numerologyForm');
 const loadingDiv = document.getElementById('loading');
@@ -72,32 +75,32 @@ form.addEventListener('submit', async (e) => {
     
     // Валидация
     if (!fullName || !birthDate) {
-        showError('Please fill in the required fields.');
+        showError(t('numerology_messages.required_fields'));
         return;
     }
 
     const birthValue = dateValueFromInput(birthDate);
     if (!birthValue) {
-        showError('Please enter a valid birth date.');
+        showError(t('numerology_messages.invalid_birth'));
         return;
     }
     if (birthValue > todayValue) {
-        showError('Birth date cannot be in the future.');
+        showError(t('numerology_messages.birth_future'));
         return;
     }
 
     if (currentDate) {
         const currentValue = dateValueFromInput(currentDate);
         if (!currentValue) {
-            showError('Please enter a valid current date.');
+            showError(t('numerology_messages.invalid_current'));
             return;
         }
         if (currentValue > todayValue) {
-            showError('Current date cannot be in the future.');
+            showError(t('numerology_messages.current_future'));
             return;
         }
         if (currentValue < birthValue) {
-            showError('Current date cannot be earlier than birth date.');
+            showError(t('numerology_messages.current_before_birth'));
             return;
         }
     }
@@ -127,7 +130,7 @@ form.addEventListener('submit', async (e) => {
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'We could not calculate that right now.');
+            throw new Error(errorData.error || t('numerology_messages.calculation_failed'));
         }
         
         const data = await response.json();
@@ -136,7 +139,7 @@ form.addEventListener('submit', async (e) => {
         displayResults(data);
         
     } catch (error) {
-        showError(error.message || 'Something went wrong. Please try again in a moment.');
+        showError(error.message || t('numerology_messages.generic_error'));
     }
 });
 
@@ -175,7 +178,7 @@ function displayMainNumber(prefix, numberData) {
     
     // Обновляем название
     const nameEl = document.getElementById(`${prefix}Name`);
-    nameEl.textContent = meaning.name || `Number ${number}`;
+    nameEl.textContent = meaning.name || t('numerology_messages.number_label', { number });
     
     // Обновляем описание
     const descEl = document.getElementById(`${prefix}Description`);
@@ -228,9 +231,14 @@ function displayCycle(prefix, cycleData) {
     const formula = cycleData.formula || {};
     
     document.getElementById(`${prefix}Number`).textContent = number;
+    const fallbackKey =
+        prefix === 'personalYear'
+            ? 'numerology_messages.personal_year_energy'
+            : prefix === 'personalMonth'
+                ? 'numerology_messages.personal_month_energy'
+                : 'numerology_messages.personal_day_energy';
     document.getElementById(`${prefix}Description`).textContent =
-        meaning.description ||
-        `Personal ${prefix === 'personalYear' ? 'year' : prefix === 'personalMonth' ? 'month' : 'day'} energy: ${number}`;
+        meaning.description || t(fallbackKey, { number });
     
     // Отображаем формулу
     const formulaEl = document.getElementById(`${prefix}Formula`);
@@ -268,12 +276,12 @@ function createPinnacleCard(pinnacle, index) {
     const card = document.createElement('div');
     card.className = 'pinnacle-card';
     
-    const ageText = pinnacle.age_end 
-        ? `Ages ${pinnacle.age_start}-${pinnacle.age_end}`
-        : `From age ${pinnacle.age_start}`;
+    const ageText = pinnacle.age_end
+        ? t('numerology_messages.ages_range', { start: pinnacle.age_start, end: pinnacle.age_end })
+        : t('numerology_messages.age_from', { start: pinnacle.age_start });
     
     card.innerHTML = `
-        <h4>Peak ${index}</h4>
+        <h4>${t('numerology_messages.peak', { index })}</h4>
         <div class="number">${pinnacle.number}</div>
         <div class="age">${ageText}</div>
         <div class="description">${pinnacle.description || ''}</div>
@@ -298,12 +306,12 @@ function createChallengeCard(challenge, index) {
     const card = document.createElement('div');
     card.className = 'challenge-card';
     
-    const ageText = challenge.age_end 
-        ? `Ages ${challenge.age_start}-${challenge.age_end}`
-        : `From age ${challenge.age_start}`;
+    const ageText = challenge.age_end
+        ? t('numerology_messages.ages_range', { start: challenge.age_start, end: challenge.age_end })
+        : t('numerology_messages.age_from', { start: challenge.age_start });
     
     card.innerHTML = `
-        <h4>Lesson ${index}</h4>
+        <h4>${t('numerology_messages.lesson', { index })}</h4>
         <div class="number">${challenge.number}</div>
         <div class="age">${ageText}</div>
         <div class="description">${challenge.description || ''}</div>
@@ -378,18 +386,18 @@ compatibilityForm.addEventListener('submit', async (e) => {
     
     // Валидация
     if (!person1Name || !person1BirthDate || !person2Name || !person2BirthDate) {
-        showCompatibilityError('Please fill in both profiles.');
+        showCompatibilityError(t('numerology_messages.compatibility_required'));
         return;
     }
 
     const person1BirthValue = dateValueFromInput(person1BirthDate);
     const person2BirthValue = dateValueFromInput(person2BirthDate);
     if (!person1BirthValue || !person2BirthValue) {
-        showCompatibilityError('Please enter valid birth dates.');
+        showCompatibilityError(t('numerology_messages.compatibility_invalid_dates'));
         return;
     }
     if (person1BirthValue > todayValue || person2BirthValue > todayValue) {
-        showCompatibilityError('Birth dates cannot be in the future.');
+        showCompatibilityError(t('numerology_messages.compatibility_future'));
         return;
     }
     
@@ -416,14 +424,14 @@ compatibilityForm.addEventListener('submit', async (e) => {
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'We could not read the connection right now.');
+            throw new Error(errorData.error || t('numerology_messages.compatibility_failed'));
         }
         
         const data = await response.json();
         displayCompatibilityResults(data);
         
     } catch (error) {
-        showCompatibilityError(error.message || 'Something went wrong while checking compatibility.');
+        showCompatibilityError(error.message || t('numerology_messages.compatibility_generic'));
     } finally {
         compatibilityLoading.classList.add('hidden');
     }
@@ -466,7 +474,12 @@ function displayCompatibilityResults(data) {
         const p1LP = data.person1.life_path;
         const p2LP = data.person2.life_path;
         const sum = p1LP + p2LP;
-        pairFormula.textContent = `Example: ${p1LP} + ${p2LP} = ${sum} -> ${data.pair_number}`;
+        pairFormula.textContent = t('numerology_messages.pair_example', {
+            p1: p1LP,
+            p2: p2LP,
+            sum,
+            pair: data.pair_number
+        });
     }
     
     // Рекомендации
@@ -486,12 +499,12 @@ function displayCompatibilityDetail(prefix, compData) {
     
     // Формируем строку с числами (показываем мастер-числа)
     let numbersDisplay = `${num1}`;
-    if (num1 in [11, 22, 33]) {
-        numbersDisplay += ` (master number)`;
+    if ([11, 22, 33].includes(num1)) {
+        numbersDisplay += ` (${t('numerology_messages.master_number')})`;
     }
     numbersDisplay += ` + ${num2}`;
-    if (num2 in [11, 22, 33]) {
-        numbersDisplay += ` (master number)`;
+    if ([11, 22, 33].includes(num2)) {
+        numbersDisplay += ` (${t('numerology_messages.master_number')})`;
     }
     
     document.getElementById(`${prefix}Numbers`).textContent = numbersDisplay;

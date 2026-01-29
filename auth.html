@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign in - Arcana Table</title>
+    <title data-i18n="auth.page.meta_title">Sign in - Arcana Table</title>
     <base href="/" />
     <link rel="stylesheet" href="styles.css?v=20260116" />
   </head>
@@ -20,20 +20,26 @@
               ></path>
             </svg>
           </div>
-          <h1 id="authTitle" class="auth-card__title">Login your account</h1>
+          <h1 id="authTitle" class="auth-card__title" data-i18n="auth.page.title.signin">
+            Login your account
+          </h1>
           <p class="auth-switch auth-switch--signin">
-            Don't have an account?
-            <button type="button" class="auth-link" data-auth-mode="signup">Sign up</button>
+            <span data-i18n="auth.page.switch.no_account">Don't have an account?</span>
+            <button type="button" class="auth-link" data-auth-mode="signup" data-i18n="auth.page.switch.signup">
+              Sign up
+            </button>
           </p>
           <p class="auth-switch auth-switch--signup" hidden>
-            Already have an account?
-            <button type="button" class="auth-link" data-auth-mode="signin">Login</button>
+            <span data-i18n="auth.page.switch.have_account">Already have an account?</span>
+            <button type="button" class="auth-link" data-auth-mode="signin" data-i18n="auth.page.switch.signin">
+              Login
+            </button>
           </p>
         </div>
 
         <form id="authForm" class="auth-form" novalidate>
           <div class="auth-name-row" data-auth-name hidden>
-            <label class="auth-label" for="authName">Your name</label>
+            <label class="auth-label" for="authName" data-i18n="auth.page.name.label">Your name</label>
             <input
               id="authName"
               class="auth-input"
@@ -41,9 +47,10 @@
               name="name"
               autocomplete="name"
               placeholder="Enter your name"
+              data-i18n-attr="placeholder:auth.page.name.placeholder"
             />
           </div>
-          <label class="auth-label" for="authEmail">Email</label>
+          <label class="auth-label" for="authEmail" data-i18n="auth.page.email.label">Email</label>
           <input
             id="authEmail"
             class="auth-input"
@@ -51,9 +58,10 @@
             name="email"
             autocomplete="email"
             placeholder="Enter your email address"
+            data-i18n-attr="placeholder:auth.page.email.placeholder"
             required
           />
-          <label class="auth-label" for="authPassword">Password</label>
+          <label class="auth-label" for="authPassword" data-i18n="auth.page.password.label">Password</label>
           <div class="auth-password">
             <input
               id="authPassword"
@@ -62,10 +70,11 @@
               name="password"
               autocomplete="current-password"
               placeholder="Enter your password"
+              data-i18n-attr="placeholder:auth.page.password.placeholder"
               required
             />
             <button class="auth-password__toggle" type="button" data-auth-toggle>
-              <span class="sr-only">Toggle password</span>
+              <span class="sr-only" data-i18n="auth.page.password.toggle">Toggle password</span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12 5c4.8 0 8.9 3 10.5 7.2c.1.3.1.6 0 .8C20.9 17 16.8 20 12 20S3.1 17 1.5 13c-.1-.3-.1-.6 0-.8C3.1 8 7.2 5 12 5Zm0 2C8.5 7 5.3 9.1 3.7 12c1.6 2.9 4.8 5 8.3 5s6.7-2.1 8.3-5C18.7 9.1 15.5 7 12 7Zm0 2.5A2.5 2.5 0 1 1 12 14a2.5 2.5 0 0 1 0-5Z"
@@ -75,10 +84,16 @@
             </button>
           </div>
           <p class="auth-hint" data-auth-hint hidden>
-            Use 8 or more characters with a mix of letters, numbers &amp; symbols.
+            <span data-i18n="auth.page.password.hint">
+              Use 8 or more characters with a mix of letters, numbers &amp; symbols.
+            </span>
           </p>
-          <button class="primary-btn auth-submit" type="submit">Login</button>
-          <button class="auth-link auth-forgot" type="button" data-auth-forgot>Forgot Password?</button>
+          <button class="primary-btn auth-submit" type="submit" data-i18n="auth.page.submit.signin">
+            Login
+          </button>
+          <button class="auth-link auth-forgot" type="button" data-auth-forgot data-i18n="auth.page.forgot">
+            Forgot Password?
+          </button>
         </form>
 
         <div id="authReset" class="auth-reset" hidden>
@@ -91,13 +106,15 @@
               ></path>
             </svg>
           </div>
-          <h2 id="authResetTitle" class="auth-reset__title">Reset your password</h2>
-          <p id="authResetText" class="auth-reset__text">
+          <h2 id="authResetTitle" class="auth-reset__title" data-i18n="auth.page.reset.title">
+            Reset your password
+          </h2>
+          <p id="authResetText" class="auth-reset__text" data-i18n="auth.page.reset.text">
             We will email you a link to reset your password.
           </p>
 
           <div class="auth-reset__panel" data-auth-reset-panel="request">
-            <label class="auth-label" for="authResetEmail">Email</label>
+            <label class="auth-label" for="authResetEmail" data-i18n="auth.page.email.label">Email</label>
             <input
               id="authResetEmail"
               class="auth-input"
@@ -105,14 +122,17 @@
               name="resetEmail"
               autocomplete="email"
               placeholder="Enter your email address"
+              data-i18n-attr="placeholder:auth.page.email.placeholder"
             />
             <button class="primary-btn auth-reset__action" type="button" data-auth-reset-send>
-              Send reset link
+              <span data-i18n="auth.page.reset.send">Send reset link</span>
             </button>
           </div>
 
           <div class="auth-reset__panel" data-auth-reset-panel="update" hidden>
-            <label class="auth-label" for="authResetPassword">New password</label>
+            <label class="auth-label" for="authResetPassword" data-i18n="auth.page.reset.new_password.label">
+              New password
+            </label>
             <div class="auth-password">
               <input
                 id="authResetPassword"
@@ -121,9 +141,10 @@
                 name="newPassword"
                 autocomplete="new-password"
                 placeholder="Create a new password"
+                data-i18n-attr="placeholder:auth.page.reset.new_password.placeholder"
               />
               <button class="auth-password__toggle" type="button" data-auth-toggle-reset>
-                <span class="sr-only">Toggle password</span>
+                <span class="sr-only" data-i18n="auth.page.password.toggle">Toggle password</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M12 5c4.8 0 8.9 3 10.5 7.2c.1.3.1.6 0 .8C20.9 17 16.8 20 12 20S3.1 17 1.5 13c-.1-.3-.1-.6 0-.8C3.1 8 7.2 5 12 5Zm0 2C8.5 7 5.3 9.1 3.7 12c1.6 2.9 4.8 5 8.3 5s6.7-2.1 8.3-5C18.7 9.1 15.5 7 12 7Zm0 2.5A2.5 2.5 0 1 1 12 14a2.5 2.5 0 0 1 0-5Z"
@@ -132,7 +153,9 @@
                 </svg>
               </button>
             </div>
-            <label class="auth-label" for="authResetConfirm">Confirm password</label>
+            <label class="auth-label" for="authResetConfirm" data-i18n="auth.page.reset.confirm.label">
+              Confirm password
+            </label>
             <input
               id="authResetConfirm"
               class="auth-input"
@@ -140,14 +163,15 @@
               name="confirmPassword"
               autocomplete="new-password"
               placeholder="Repeat your new password"
+              data-i18n-attr="placeholder:auth.page.reset.confirm.placeholder"
             />
             <button class="primary-btn auth-reset__action" type="button" data-auth-reset-update>
-              Update password
+              <span data-i18n="auth.page.reset.update">Update password</span>
             </button>
           </div>
 
           <button class="auth-link auth-reset__back" type="button" data-auth-reset-back>
-            Back to login
+            <span data-i18n="auth.page.reset.back">Back to login</span>
           </button>
         </div>
 
@@ -161,20 +185,24 @@
               ></path>
             </svg>
           </div>
-          <h2 class="auth-verify__title">Verify your email</h2>
+          <h2 class="auth-verify__title" data-i18n="auth.page.verify.title">Verify your email</h2>
           <p class="auth-verify__text">
-            We have sent a verification link to
+            <span data-i18n="auth.page.verify.text_prefix">We have sent a verification link to</span>
             <strong id="authVerifyEmail">your email</strong>.
           </p>
           <p class="auth-verify__text muted">
-            Click the link to complete verification. Check spam if you don’t see it.
+            <span data-i18n="auth.page.verify.text_note">
+              Click the link to complete verification. Check spam if you don’t see it.
+            </span>
           </p>
           <button class="primary-btn auth-verify__action" type="button" data-auth-resend>
-            Resend verification link
+            <span data-i18n="auth.page.verify.resend">Resend verification link</span>
           </button>
           <p class="auth-verify__footer">
-            Try another email?
-            <button type="button" class="auth-link" data-auth-mode="signin">Go to Login</button>
+            <span data-i18n="auth.page.verify.try_another">Try another email?</span>
+            <button type="button" class="auth-link" data-auth-mode="signin" data-i18n="auth.page.verify.back_to_login">
+              Go to Login
+            </button>
           </p>
         </div>
 
@@ -185,6 +213,7 @@
     </main>
 
     <script src="config.js?v=20260116"></script>
+    <script src="i18n.js?v=20260128-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="auth.js?v=20260116"></script>
   </body>

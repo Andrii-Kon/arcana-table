@@ -1,3 +1,6 @@
+const i18n = window.i18n || {};
+const t = (key, vars) => (typeof i18n.t === 'function' ? i18n.t(key, vars) : key);
+
 const palmistryForm = document.getElementById('palmistryForm');
 
 if (palmistryForm) {
@@ -13,193 +16,214 @@ if (palmistryForm) {
 
   const TRAIT_DEFS = {
     practical: {
-      label: 'Practical',
-      description: 'Grounded, steady, prefers clear plans and results.'
+      labelKey: 'palmistry.traits.practical.label',
+      descriptionKey: 'palmistry.traits.practical.desc'
     },
     creative: {
-      label: 'Creative',
-      description: 'Drawn to beauty, expression, and originality.'
+      labelKey: 'palmistry.traits.creative.label',
+      descriptionKey: 'palmistry.traits.creative.desc'
     },
     intuitive: {
-      label: 'Intuitive',
-      description: 'Reads between the lines and trusts inner signals.'
+      labelKey: 'palmistry.traits.intuitive.label',
+      descriptionKey: 'palmistry.traits.intuitive.desc'
     },
     analytical: {
-      label: 'Analytical',
-      description: 'Studies details carefully and seeks understanding.'
+      labelKey: 'palmistry.traits.analytical.label',
+      descriptionKey: 'palmistry.traits.analytical.desc'
     },
     ambitious: {
-      label: 'Ambitious',
-      description: 'Driven to lead, improve, or rise into challenges.'
+      labelKey: 'palmistry.traits.ambitious.label',
+      descriptionKey: 'palmistry.traits.ambitious.desc'
     },
     communicative: {
-      label: 'Communicative',
-      description: 'Expressive, persuasive, and quick with language.'
+      labelKey: 'palmistry.traits.communicative.label',
+      descriptionKey: 'palmistry.traits.communicative.desc'
     },
     resilient: {
-      label: 'Resilient',
-      description: 'Strong endurance and steady energy.'
+      labelKey: 'palmistry.traits.resilient.label',
+      descriptionKey: 'palmistry.traits.resilient.desc'
     },
     adaptable: {
-      label: 'Adaptable',
-      description: 'Flexible, open to change, and fast to adjust.'
+      labelKey: 'palmistry.traits.adaptable.label',
+      descriptionKey: 'palmistry.traits.adaptable.desc'
     },
     sensitive: {
-      label: 'Sensitive',
-      description: 'Feels deeply and notices subtle shifts.'
+      labelKey: 'palmistry.traits.sensitive.label',
+      descriptionKey: 'palmistry.traits.sensitive.desc'
     },
     disciplined: {
-      label: 'Disciplined',
-      description: 'Steady willpower and consistent follow-through.'
+      labelKey: 'palmistry.traits.disciplined.label',
+      descriptionKey: 'palmistry.traits.disciplined.desc'
     },
     grounded: {
-      label: 'Grounded',
-      description: 'Direct, physical, and focused on essentials.'
+      labelKey: 'palmistry.traits.grounded.label',
+      descriptionKey: 'palmistry.traits.grounded.desc'
     },
     idealistic: {
-      label: 'Idealistic',
-      description: 'Guided by ideals, vision, and inner meaning.'
+      labelKey: 'palmistry.traits.idealistic.label',
+      descriptionKey: 'palmistry.traits.idealistic.desc'
     }
   };
 
   const HAND_TYPES = {
     elementary: {
-      title: 'Elementary hand',
-      description:
-        'Short and thick with heavy fingers. This type focuses on direct action, tangible needs, and a practical sense of life.',
-      tags: ['instinctive', 'direct', 'physical'],
+      titleKey: 'palmistry.hand_types.elementary.title',
+      descriptionKey: 'palmistry.hand_types.elementary.desc',
+      tags: [
+        'palmistry.tags.instinctive',
+        'palmistry.tags.direct',
+        'palmistry.tags.physical'
+      ],
       traits: { grounded: 3, resilient: 1 }
     },
     square: {
-      title: 'Square hand',
-      description:
-        'Square palm and straight edges point to a practical, methodical, and reliable nature that values proof and structure.',
-      tags: ['methodical', 'reliable', 'steady'],
+      titleKey: 'palmistry.hand_types.square.title',
+      descriptionKey: 'palmistry.hand_types.square.desc',
+      tags: [
+        'palmistry.tags.methodical',
+        'palmistry.tags.reliable',
+        'palmistry.tags.steady'
+      ],
       traits: { practical: 3, disciplined: 1 }
     },
     spatulate: {
-      title: 'Spatulate hand',
-      description:
-        'Widened finger tips and an active shape suggest energy, drive, and a taste for action and innovation.',
-      tags: ['energetic', 'inventive', 'restless'],
+      titleKey: 'palmistry.hand_types.spatulate.title',
+      descriptionKey: 'palmistry.hand_types.spatulate.desc',
+      tags: [
+        'palmistry.tags.energetic',
+        'palmistry.tags.inventive',
+        'palmistry.tags.restless'
+      ],
       traits: { adaptable: 2, resilient: 1 }
     },
     philosophic: {
-      title: 'Philosophic hand',
-      description:
-        'Long, bony palm with knotty joints. Indicates a thoughtful, analytical, and reflective temperament.',
-      tags: ['thoughtful', 'studious', 'independent'],
+      titleKey: 'palmistry.hand_types.philosophic.title',
+      descriptionKey: 'palmistry.hand_types.philosophic.desc',
+      tags: [
+        'palmistry.tags.thoughtful',
+        'palmistry.tags.studious',
+        'palmistry.tags.independent'
+      ],
       traits: { analytical: 2, sensitive: 1 }
     },
     conic: {
-      title: 'Conic (artistic) hand',
-      description:
-        'Tapered fingers and a soft palm point to artistic sensitivity, emotional depth, and love of beauty.',
-      tags: ['artistic', 'sensitive', 'aesthetic'],
+      titleKey: 'palmistry.hand_types.conic.title',
+      descriptionKey: 'palmistry.hand_types.conic.desc',
+      tags: [
+        'palmistry.tags.artistic',
+        'palmistry.tags.sensitive',
+        'palmistry.tags.aesthetic'
+      ],
       traits: { creative: 2, sensitive: 1 }
     },
     psychic: {
-      title: 'Psychic (idealistic) hand',
-      description:
-        'Fine, delicate lines suggest an inward, intuitive nature that lives strongly in ideals and imagination.',
-      tags: ['idealistic', 'intuitive', 'dreamy'],
+      titleKey: 'palmistry.hand_types.psychic.title',
+      descriptionKey: 'palmistry.hand_types.psychic.desc',
+      tags: [
+        'palmistry.tags.idealistic',
+        'palmistry.tags.intuitive',
+        'palmistry.tags.dreamy'
+      ],
       traits: { idealistic: 2, intuitive: 2 }
     },
     mixed: {
-      title: 'Mixed hand',
-      description:
-        'A blend of shapes across the palm and fingers. Suggests versatility and a wide range of interests.',
-      tags: ['versatile', 'curious', 'changeable'],
+      titleKey: 'palmistry.hand_types.mixed.title',
+      descriptionKey: 'palmistry.hand_types.mixed.desc',
+      tags: [
+        'palmistry.tags.versatile',
+        'palmistry.tags.curious',
+        'palmistry.tags.changeable'
+      ],
       traits: { adaptable: 2, communicative: 1 }
     }
   };
 
   const LINE_QUESTIONS = {
     headLine: {
-      label: 'Head line',
+      labelKey: 'palmistry.lines.head.label',
       options: {
         straight: {
-          description: 'A straight head line leans practical and logical in thought.',
+          descriptionKey: 'palmistry.lines.head.straight',
           traits: { practical: 2, analytical: 1 }
         },
         sloping: {
-          description: 'A sloping head line favors imagination, intuition, and creativity.',
+          descriptionKey: 'palmistry.lines.head.sloping',
           traits: { intuitive: 2, creative: 1 }
         },
         chained: {
-          description: 'A chained head line suggests mental sensitivity and shifting focus.',
+          descriptionKey: 'palmistry.lines.head.chained',
           traits: { sensitive: 1, adaptable: 1 }
         }
       }
     },
     heartLine: {
-      label: 'Heart line',
+      labelKey: 'palmistry.lines.heart.label',
       options: {
         jupiter: {
-          description: 'Ending under the index finger points to idealism in love.',
+          descriptionKey: 'palmistry.lines.heart.jupiter',
           traits: { idealistic: 2, sensitive: 1 }
         },
         between: {
-          description: 'Ending between index and middle suggests balanced emotions.',
+          descriptionKey: 'palmistry.lines.heart.between',
           traits: { adaptable: 1, sensitive: 1 }
         },
         saturn: {
-          description: 'Ending under the middle finger reads as reserved and realistic.',
+          descriptionKey: 'palmistry.lines.heart.saturn',
           traits: { analytical: 1, practical: 1 }
         },
         chained: {
-          description: 'Chained or broken points to deep sensitivity in feelings.',
+          descriptionKey: 'palmistry.lines.heart.chained',
           traits: { sensitive: 2 }
         }
       }
     },
     lifeLine: {
-      label: 'Life line',
+      labelKey: 'palmistry.lines.life.label',
       options: {
         strong: {
-          description: 'Long and deep suggests strong vitality and steady stamina.',
+          descriptionKey: 'palmistry.lines.life.strong',
           traits: { resilient: 2 }
         },
         faint: {
-          description: 'Faint or shallow suggests gentle energy and need for balance.',
+          descriptionKey: 'palmistry.lines.life.faint',
           traits: { sensitive: 1 }
         },
         broken: {
-          description: 'Broken or islanded indicates periods of change or shifts in energy.',
+          descriptionKey: 'palmistry.lines.life.broken',
           traits: { adaptable: 1 }
         },
         mars: {
-          description: 'A parallel support line signals extra resilience and recovery.',
+          descriptionKey: 'palmistry.lines.life.mars',
           traits: { resilient: 2, disciplined: 1 }
         }
       }
     },
     fateLine: {
-      label: 'Fate line',
+      labelKey: 'palmistry.lines.fate.label',
       options: {
         clear: {
-          description: 'A clear fate line suggests focus and a defined path.',
+          descriptionKey: 'palmistry.lines.fate.clear',
           traits: { ambitious: 1, disciplined: 1 }
         },
         broken: {
-          description: 'Faint or broken suggests career shifts or reinventions.',
+          descriptionKey: 'palmistry.lines.fate.broken',
           traits: { adaptable: 2 }
         },
         absent: {
-          description: 'Absent suggests a self-directed path with flexible choices.',
+          descriptionKey: 'palmistry.lines.fate.absent',
           traits: { adaptable: 1, creative: 1 }
         }
       }
     },
     sunLine: {
-      label: 'Sun line',
+      labelKey: 'palmistry.lines.sun.label',
       options: {
         clear: {
-          description: 'A clear sun line points to recognition and joy in expression.',
+          descriptionKey: 'palmistry.lines.sun.clear',
           traits: { creative: 1, ambitious: 1 }
         },
         absent: {
-          description: 'Absent suggests private satisfaction over public attention.',
+          descriptionKey: 'palmistry.lines.sun.absent',
           traits: { sensitive: 1 }
         }
       }
@@ -210,11 +234,11 @@ if (palmistryForm) {
     thumbFlex: {
       options: {
         supple: {
-          note: 'Supple thumb: flexible, adaptable, and generous in approach.',
+          noteKey: 'palmistry.features.thumb_flex.supple',
           traits: { adaptable: 2, sensitive: 1 }
         },
         firm: {
-          note: 'Firm thumb: steady willpower and persistence.',
+          noteKey: 'palmistry.features.thumb_flex.firm',
           traits: { disciplined: 2, ambitious: 1 }
         }
       }
@@ -222,15 +246,15 @@ if (palmistryForm) {
     thumbLength: {
       options: {
         long: {
-          note: 'Long thumb: strong will and follow-through.',
+          noteKey: 'palmistry.features.thumb_length.long',
           traits: { disciplined: 2 }
         },
         balanced: {
-          note: 'Balanced thumb: even mix of will and reason.',
+          noteKey: 'palmistry.features.thumb_length.balanced',
           traits: { practical: 1 }
         },
         short: {
-          note: 'Short thumb: quick to act, spontaneous responses.',
+          noteKey: 'palmistry.features.thumb_length.short',
           traits: { adaptable: 1, sensitive: 1 }
         }
       }
@@ -238,15 +262,15 @@ if (palmistryForm) {
     indexRing: {
       options: {
         index: {
-          note: 'Index longer: leadership drive and ambition.',
+          noteKey: 'palmistry.features.index_ring.index',
           traits: { ambitious: 2 }
         },
         ring: {
-          note: 'Ring longer: artistic pull and love of beauty.',
+          noteKey: 'palmistry.features.index_ring.ring',
           traits: { creative: 2 }
         },
         even: {
-          note: 'Even length: balanced approach to authority and expression.',
+          noteKey: 'palmistry.features.index_ring.even',
           traits: { practical: 1 }
         }
       }
@@ -254,11 +278,11 @@ if (palmistryForm) {
     mercuryLength: {
       options: {
         long: {
-          note: 'Long Mercury finger: strong communication skills.',
+          noteKey: 'palmistry.features.mercury.long',
           traits: { communicative: 2 }
         },
         short: {
-          note: 'Short Mercury finger: private, measured speech.',
+          noteKey: 'palmistry.features.mercury.short',
           traits: { sensitive: 1 }
         }
       }
@@ -266,15 +290,15 @@ if (palmistryForm) {
     nails: {
       options: {
         long: {
-          note: 'Long or narrow nails: sensitive and perceptive.',
+          noteKey: 'palmistry.features.nails.long',
           traits: { sensitive: 1, intuitive: 1 }
         },
         short: {
-          note: 'Short or broad nails: direct, energetic nature.',
+          noteKey: 'palmistry.features.nails.short',
           traits: { resilient: 1, practical: 1 }
         },
         balanced: {
-          note: 'Balanced nails: steady temperament and control.',
+          noteKey: 'palmistry.features.nails.balanced',
           traits: { practical: 1 }
         }
       }
@@ -283,31 +307,31 @@ if (palmistryForm) {
 
   const MOUNTS = {
     venus: {
-      note: 'Venus mount: warmth, affection, and magnetism.',
+      noteKey: 'palmistry.mounts.venus',
       traits: { sensitive: 1 }
     },
     moon: {
-      note: 'Moon mount: imagination and romantic tone.',
+      noteKey: 'palmistry.mounts.moon',
       traits: { intuitive: 2 }
     },
     jupiter: {
-      note: 'Jupiter mount: ambition and leadership drive.',
+      noteKey: 'palmistry.mounts.jupiter',
       traits: { ambitious: 2 }
     },
     saturn: {
-      note: 'Saturn mount: seriousness and responsibility.',
+      noteKey: 'palmistry.mounts.saturn',
       traits: { analytical: 1, practical: 1 }
     },
     sun: {
-      note: 'Sun mount: optimism and creative expression.',
+      noteKey: 'palmistry.mounts.sun',
       traits: { creative: 1 }
     },
     mercury: {
-      note: 'Mercury mount: wit, commerce, and communication.',
+      noteKey: 'palmistry.mounts.mercury',
       traits: { communicative: 1 }
     },
     mars: {
-      note: 'Mars mount: courage and endurance.',
+      noteKey: 'palmistry.mounts.mars',
       traits: { resilient: 2 }
     }
   };
@@ -350,7 +374,7 @@ if (palmistryForm) {
     tags.forEach((tag) => {
       const span = document.createElement('span');
       span.className = 'tag';
-      span.textContent = tag;
+      span.textContent = t(tag);
       handTypeTagsEl.appendChild(span);
     });
   };
@@ -364,7 +388,7 @@ if (palmistryForm) {
 
     if (sorted.length === 0) {
       const li = document.createElement('li');
-      li.textContent = 'Your traits balance evenly across the quiz.';
+      li.textContent = t('palmistry_messages.traits_balanced');
       traitsEl.appendChild(li);
       return;
     }
@@ -374,9 +398,9 @@ if (palmistryForm) {
       if (!def) return;
       const li = document.createElement('li');
       const strong = document.createElement('strong');
-      strong.textContent = `${def.label}: `;
+      strong.textContent = `${t(def.labelKey)}: `;
       li.appendChild(strong);
-      li.appendChild(document.createTextNode(def.description));
+      li.appendChild(document.createTextNode(t(def.descriptionKey)));
       traitsEl.appendChild(li);
     });
   };
@@ -400,7 +424,7 @@ if (palmistryForm) {
     notesEl.innerHTML = '';
     if (notes.length === 0) {
       const li = document.createElement('li');
-      li.textContent = 'No extra notes selected.';
+      li.textContent = t('palmistry_messages.no_notes');
       notesEl.appendChild(li);
       return;
     }
@@ -418,21 +442,21 @@ if (palmistryForm) {
     const formData = new FormData(palmistryForm);
     for (const field of REQUIRED_FIELDS) {
       if (!formData.get(field)) {
-        showError('Please answer all required questions.');
+        showError(t('palmistry_messages.required_questions'));
         return;
       }
     }
 
     const selectedMounts = formData.getAll('mounts');
     if (selectedMounts.length > 2) {
-      showError('Please select up to two mounts.');
+      showError(t('palmistry_messages.max_mounts'));
       return;
     }
 
     const handTypeKey = formData.get('handType');
     const handTypeData = HAND_TYPES[handTypeKey];
     if (!handTypeData) {
-      showError('Please select a hand type.');
+      showError(t('palmistry_messages.select_hand'));
       return;
     }
 
@@ -446,7 +470,7 @@ if (palmistryForm) {
       const value = formData.get(field);
       const option = data.options[value];
       if (!option) return;
-      lineResults.push({ label: data.label, description: option.description });
+      lineResults.push({ label: t(data.labelKey), description: t(option.descriptionKey) });
       addTraits(traitScores, option.traits);
     });
 
@@ -454,8 +478,8 @@ if (palmistryForm) {
       const value = formData.get(field);
       const option = data.options[value];
       if (!option) return;
-      if (option.note) {
-        notes.push(option.note);
+      if (option.noteKey) {
+        notes.push(t(option.noteKey));
       }
       addTraits(traitScores, option.traits);
     });
@@ -463,14 +487,14 @@ if (palmistryForm) {
     selectedMounts.forEach((mountKey) => {
       const mount = MOUNTS[mountKey];
       if (!mount) return;
-      if (mount.note) {
-        notes.push(mount.note);
+      if (mount.noteKey) {
+        notes.push(t(mount.noteKey));
       }
       addTraits(traitScores, mount.traits);
     });
 
-    handTypeTitleEl.textContent = handTypeData.title;
-    handTypeDescEl.textContent = handTypeData.description;
+    handTypeTitleEl.textContent = t(handTypeData.titleKey);
+    handTypeDescEl.textContent = t(handTypeData.descriptionKey);
     renderTags(handTypeData.tags || []);
     renderTraits(traitScores);
     renderLines(lineResults);
