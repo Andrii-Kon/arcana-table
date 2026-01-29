@@ -2555,6 +2555,7 @@ const soulmateStatus = document.getElementById('soulmateStatus');
 const soulmateModal = document.getElementById('soulmateModal');
 const soulmateTriggers = Array.from(document.querySelectorAll('[data-soulmate-trigger]'));
 let soulmateRequested = false;
+const SOULMATE_SEEN_KEY = 'soulmateAutoSeen';
 
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
@@ -2729,18 +2730,32 @@ const loadSoulmate = async () => {
     }
     soulmatePanel.hidden = false;
     if (data.status === 'ready' && data.image_url) {
+
+      // Auto-open only once for users who came from quiz
+      if (!localStorage.getItem(SOULMATE_SEEN_KEY)) {
+        localStorage.setItem(SOULMATE_SEEN_KEY, '1');
+        openSoulmateModal();
+      }
+    
       if (soulmateImage) {
         soulmateImage.hidden = false;
         soulmateImage.src = data.image_url;
       }
+    
       setSoulmateStatus('');
       return true;
-    }
+    }    
     if (soulmateImage) soulmateImage.hidden = true;
     if (data.status === 'processing') {
+
+      if (!localStorage.getItem(SOULMATE_SEEN_KEY)) {
+        localStorage.setItem(SOULMATE_SEEN_KEY, '1');
+        openSoulmateModal();
+      }
+    
       setSoulmateStatusKey('soulmate.status.processing');
       return true;
-    }
+    }    
     setSoulmateStatusKey('soulmate.status.generating');
     await requestSoulmateGeneration();
     return true;
