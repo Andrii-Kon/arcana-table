@@ -1808,12 +1808,7 @@
     });
   };
 
-  let currentLang =
-    normalizeLang(getPathLang()) ||
-    normalizeLang(getQueryLang()) ||
-    normalizeLang(getStoredLang()) ||
-    normalizeLang(getBrowserLang()) ||
-    'en';
+  let currentLang = normalizeLang(getPathLang()) || normalizeLang(getQueryLang()) || 'en';
 
   const t = (key, vars) => {
     const value = getPathValue(currentLang, key) ?? getPathValue('en', key);
