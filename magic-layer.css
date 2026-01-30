@@ -153,6 +153,31 @@
   display: block;
 }
 
+.magic-layer__fog-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  opacity: 0;
+  filter: blur(3px) saturate(1.2);
+  mix-blend-mode: screen;
+  clip-path: polygon(50% 92%, 92% 4%, 8% 4%);
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.magic-layer__orb.is-shaking .magic-layer__fog-video,
+.magic-layer__orb.is-revealing .magic-layer__fog-video {
+  opacity: 0.95;
+}
+
+.magic-layer__orb.is-revealed .magic-layer__fog-video {
+  opacity: 0;
+}
+
 .magic-layer__orb::before {
   content: '';
   position: absolute;
@@ -205,6 +230,7 @@
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  transform: translateY(12px);
   z-index: 4;
   opacity: 1;
   transition: opacity 0.45s ease, filter 0.45s ease;
@@ -218,7 +244,7 @@
   inset: 0;
   background:
     radial-gradient(circle at 50% 50%, rgba(34, 40, 72, 0.96), rgba(16, 18, 34, 0.98));
-  clip-path: polygon(50% 4%, 92% 92%, 8% 92%);
+  clip-path: polygon(50% 92%, 92% 4%, 8% 4%);
   filter: drop-shadow(0 8px 12px rgba(8, 6, 18, 0.45));
   z-index: 0;
 }
@@ -228,24 +254,24 @@
   position: absolute;
   inset: 0;
   background: radial-gradient(circle at 50% 22%, rgba(120, 148, 255, 0.35), rgba(120, 148, 255, 0));
-  clip-path: polygon(50% 4%, 92% 92%, 8% 92%);
+  clip-path: polygon(50% 92%, 92% 4%, 8% 4%);
   opacity: 0.7;
   mix-blend-mode: screen;
-  z-index: 1;
+  z-index: 2;
 }
 
 .magic-layer__answer-outline {
   position: absolute;
   inset: 0;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  clip-path: polygon(50% 4%, 92% 92%, 8% 92%);
-  z-index: 2;
+  clip-path: polygon(50% 92%, 92% 4%, 8% 4%);
+  z-index: 3;
 }
 
 .magic-layer__answer-lines {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 4;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -257,11 +283,11 @@
   color: rgba(255, 248, 236, 0.95);
   text-transform: uppercase;
   text-rendering: geometricPrecision;
-  clip-path: polygon(50% 4%, 92% 92%, 8% 92%);
+  clip-path: polygon(50% 92%, 92% 4%, 8% 4%);
 }
 
 .magic-layer__answer-lines.is-appearing {
-  animation: magicTextReveal 0.7s ease;
+  animation: magicTextReveal 1.1s ease 0.25s both;
 }
 
 .magic-layer__answer-line {
@@ -281,8 +307,8 @@
 }
 
 .magic-layer__orb.is-revealing .magic-layer__answer-lines {
-  opacity: 1;
-  filter: none;
+  opacity: 0;
+  filter: blur(6px);
 }
 
 .magic-layer__orb.is-revealed .magic-layer__answer {
@@ -293,6 +319,14 @@
 .magic-layer__orb.is-revealed .magic-layer__answer-lines {
   opacity: 1;
   filter: none;
+}
+
+.magic-layer__orb.is-revealing .magic-layer__mist {
+  animation: magicMistIn 1.2s ease forwards;
+}
+
+.magic-layer__orb.is-revealed .magic-layer__mist {
+  animation: magicMistOut 1.2s ease 0.2s forwards;
 }
 
 .magic-layer__orb.is-shaking {
@@ -366,13 +400,16 @@
 @keyframes magicTextReveal {
   0% {
     opacity: 0;
-    filter: blur(3px);
+    filter: blur(6px);
+    transform: translateY(4px);
   }
   100% {
     opacity: 1;
     filter: none;
+    transform: translateY(0);
   }
 }
+
 
 @keyframes magicCorePulse {
   0%,

@@ -1819,7 +1819,8 @@ const getMagicDefaultAnswer = () => t('magic.default_answer');
 const getMagicDefaultStatus = () => t('magic.status.default');
 const MAGIC_SHAKE_THRESHOLD = 18;
 const MAGIC_SHAKE_COOLDOWN = 900;
-const MAGIC_REVEAL_DELAY = 520;
+const MAGIC_REVEAL_DELAY_MIN = 2400;
+const MAGIC_REVEAL_DELAY_MAX = 3800;
 const getMagicPendingStatus = () => t('magic.status.pending');
 
 const magicModal = document.getElementById('magicModal');
@@ -1831,6 +1832,7 @@ const siteNav = document.getElementById('siteNav');
 const magicAnswerBox = document.getElementById('magicAnswerBox');
 const magicAnswerLines = document.getElementById('magicAnswerLines');
 const magicAnswerLive = document.getElementById('magicAnswerLive');
+const magicFogVideo = document.getElementById('magicFogVideo');
 const magicStatus = document.getElementById('magicStatus');
 const magicReset = document.getElementById('magicReset');
 const magicEnableMotion = document.getElementById('magicEnableMotion');
@@ -1848,6 +1850,10 @@ const MAGIC_TRIANGLE_METRICS = {
   baseRatio: 0.92,
   baseWidthRatio: 0.84,
 };
+const MAGIC_TRIANGLE_INVERTED = true;
+const MAGIC_ANSWER_TEXT_RISE_PX = 10;
+const MAGIC_ANSWER_TOP_BIAS = 0.3;
+const MAGIC_ANSWER_TARGET_LINES = 3;
 
 const getMagicBoxMetrics = () => {
   if (!magicAnswerBox) return null;
@@ -2007,6 +2013,20 @@ const setMagicAnswerText = (text) => {
   if (magicAnswerLive) magicAnswerLive.textContent = text;
 };
 
+const clearMagicAnswerLines = () => {
+  if (!magicAnswerLines) return;
+  while (magicAnswerLines.firstChild) {
+    magicAnswerLines.removeChild(magicAnswerLines.firstChild);
+  }
+  setMagicAnswerText('');
+  magicAnswerLines.classList.remove('is-appearing');
+};
+
+const syncMagicFogSpeed = () => {
+  if (!magicFogVideo) return;
+  magicFogVideo.playbackRate = 1;
+};
+
 const measureMagicTextWidthPx = (text, fontSizePx, letterSpacingPx) => {
   if (!magicAnswerMeasure || !magicAnswerMeasure.ctx) return 0;
   const ctx = magicAnswerMeasure.ctx;
@@ -2038,10 +2058,11 @@ const getTriangleMetrics = (boxWidth, boxHeight) => {
 const getTriangleWidthAtY = (centerY, metrics) => {
   if (centerY <= metrics.top || centerY >= metrics.base) return 0;
   const t = (centerY - metrics.top) / metrics.height;
+  if (MAGIC_TRIANGLE_INVERTED) return metrics.baseWidth * (1 - t);
   return metrics.baseWidth * t;
 };
 
-// Wraps words into line boxes that fit inside the triangle at each line's vertical band.
+// Wraps words into fixed lines that fit inside the triangle.
 const wrapMagicAnswerLines = (text, fontSizePx, letterSpacingPx, lineHeightPx, boxWidth, boxHeight) => {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (!words.length || !boxWidth || !boxHeight) return null;
@@ -2049,96 +2070,151 @@ const wrapMagicAnswerLines = (text, fontSizePx, letterSpacingPx, lineHeightPx, b
   const metrics = getTriangleMetrics(boxWidth, boxHeight);
   const availableHeight = metrics.height;
   const maxLines = Math.max(1, Math.floor(availableHeight / lineHeightPx));
+  const targetLines = Math.min(MAGIC_ANSWER_TARGET_LINES, words.length);
+  if (maxLines < 1) return null;
+
+  const DASH_ONLY_RE = /^[-–—―]+$/;
+  const countLetters = (word) => {
+    const matches = word.match(/[A-Za-z0-9\u0400-\u04FF]/g);
+    return matches ? matches.length : 0;
+  };
+  const isShortWord = (word) => {
+    const count = countLetters(word);
+    return count > 0 && count <= 2;
+  };
+  const isLineAllowed = (start, end, lineCount) => {
+    if (end - start !== 1) return true;
+    const word = words[start];
+    if (DASH_ONLY_RE.test(word)) return false;
+    if (lineCount > 1 && isShortWord(word)) return false;
+    return true;
+  };
+
+  const wordsUpper = words.map((word) => word.toUpperCase());
+  const wordWidths = wordsUpper.map((word) =>
+    measureMagicTextWidthPx(word, fontSizePx, letterSpacingPx)
+  );
   const spaceWidth = measureMagicTextWidthPx(' ', fontSizePx, letterSpacingPx);
   const gutter = Math.max(6, fontSizePx * 0.4);
-  const safeWidthAt = (centerY) => Math.max(0, getTriangleWidthAtY(centerY, metrics) - gutter);
-  const minOffsetForWidth = (lineIndex, width) => {
-    const neededWidth = width + gutter;
-    const requiredY = metrics.top + (neededWidth / metrics.baseWidth) * metrics.height;
-    return requiredY - metrics.top - (lineIndex + 0.5) * lineHeightPx;
+  const halfLine = lineHeightPx * 0.5;
+  const safeWidthAt = (centerY) => {
+    const sampleY = MAGIC_TRIANGLE_INVERTED
+      ? Math.min(metrics.base, centerY + halfLine)
+      : Math.max(metrics.top, centerY - halfLine);
+    return Math.max(0, getTriangleWidthAtY(sampleY, metrics) - gutter);
   };
 
-  const buildLines = (topOffset) => {
-    const lines = [];
-    let current = '';
-    let currentWidth = 0;
-    let lineIndex = 0;
+  const lineWidth = (start, end) => {
+    let width = 0;
+    for (let i = start; i < end; i += 1) {
+      width += wordWidths[i];
+      if (i < end - 1) width += spaceWidth;
+    }
+    return width;
+  };
+  const makeLine = (start, end, width) => ({
+    text: wordsUpper.slice(start, end).join(' '),
+    width,
+  });
+  const buildLayoutForLines = (lineCount) => {
+    if (maxLines < lineCount) return null;
 
-    for (const word of words) {
-      const wordUpper = word.toUpperCase();
-      const wordWidth = measureMagicTextWidthPx(wordUpper, fontSizePx, letterSpacingPx);
-      const centerY = metrics.top + topOffset + (lineIndex + 0.5) * lineHeightPx;
-      const allowedWidth = safeWidthAt(centerY);
-      if (!current) {
-        if (wordWidth > allowedWidth) {
-          return { lines: null, requiredOffset: minOffsetForWidth(lineIndex, wordWidth) };
+    const freeSpace = Math.max(0, availableHeight - lineCount * lineHeightPx);
+    const topOffset = MAGIC_TRIANGLE_INVERTED
+      ? freeSpace * MAGIC_ANSWER_TOP_BIAS
+      : Math.max(0, freeSpace / 2 - MAGIC_ANSWER_TEXT_RISE_PX);
+    if (topOffset + lineCount * lineHeightPx > availableHeight) return null;
+
+    const allowedWidths = Array.from({ length: lineCount }, (_, index) => {
+      const centerY = metrics.top + topOffset + (index + 0.5) * lineHeightPx;
+      return safeWidthAt(centerY);
+    });
+    const scoreLines = (widths) =>
+      widths.reduce(
+        (sum, width, index) => sum + width / Math.max(1, allowedWidths[index]),
+        0
+      );
+    const buildFixedLines = (requireDescending) => {
+      const tol = 0.5;
+      let best = null;
+      let bestScore = -Infinity;
+
+      if (lineCount === 1) {
+        const width = lineWidth(0, words.length);
+        if (width <= allowedWidths[0] + tol) {
+          return [makeLine(0, words.length, width)];
         }
-        current = wordUpper;
-        currentWidth = wordWidth;
-        continue;
+        return null;
       }
-      const candidateWidth = currentWidth + spaceWidth + wordWidth;
-      if (candidateWidth <= allowedWidth) {
-        current = `${current} ${wordUpper}`;
-        currentWidth = candidateWidth;
-        continue;
-      }
-      lines.push({ text: current, width: currentWidth });
-      lineIndex += 1;
-      if (lineIndex >= maxLines) {
-        return { lines: null, requiredOffset: Number.POSITIVE_INFINITY };
-      }
-      const nextCenterY = metrics.top + topOffset + (lineIndex + 0.5) * lineHeightPx;
-      const nextAllowedWidth = safeWidthAt(nextCenterY);
-      if (wordWidth > nextAllowedWidth) {
-        return { lines: null, requiredOffset: minOffsetForWidth(lineIndex, wordWidth) };
-      }
-      current = wordUpper;
-      currentWidth = wordWidth;
-    }
 
-    if (current) lines.push({ text: current, width: currentWidth });
-    return { lines, requiredOffset: topOffset };
+      if (lineCount === 2) {
+        for (let i = 1; i < words.length; i += 1) {
+          if (!isLineAllowed(0, i, lineCount) || !isLineAllowed(i, words.length, lineCount)) {
+            continue;
+          }
+          const w1 = lineWidth(0, i);
+          const w2 = lineWidth(i, words.length);
+          if (w1 > allowedWidths[0] + tol || w2 > allowedWidths[1] + tol) continue;
+          if (requireDescending && w1 + tol < w2) continue;
+          const score = scoreLines([w1, w2]);
+          if (score > bestScore) {
+            bestScore = score;
+            best = [makeLine(0, i, w1), makeLine(i, words.length, w2)];
+          }
+        }
+        return best;
+      }
+
+      for (let i = 1; i < words.length - 1; i += 1) {
+        for (let j = i + 1; j < words.length; j += 1) {
+          if (
+            !isLineAllowed(0, i, lineCount) ||
+            !isLineAllowed(i, j, lineCount) ||
+            !isLineAllowed(j, words.length, lineCount)
+          ) {
+            continue;
+          }
+          const w1 = lineWidth(0, i);
+          const w2 = lineWidth(i, j);
+          const w3 = lineWidth(j, words.length);
+          if (
+            w1 > allowedWidths[0] + tol ||
+            w2 > allowedWidths[1] + tol ||
+            w3 > allowedWidths[2] + tol
+          ) {
+            continue;
+          }
+          if (requireDescending && (w1 + tol < w2 || w2 + tol < w3)) continue;
+          const score = scoreLines([w1, w2, w3]);
+          if (score > bestScore) {
+            bestScore = score;
+            best = [makeLine(0, i, w1), makeLine(i, j, w2), makeLine(j, words.length, w3)];
+          }
+        }
+      }
+      return best;
+    };
+
+    const lines = buildFixedLines(MAGIC_TRIANGLE_INVERTED) || buildFixedLines(false);
+    if (!lines || !lines.length || lines.length !== lineCount) return null;
+
+    return {
+      lines,
+      topOffset,
+      lineHeight: lineHeightPx,
+      allowedWidths,
+      fontSize: fontSizePx,
+      letterSpacing: letterSpacingPx,
+      metrics,
+    };
   };
 
-  let topOffset = 0;
-  let lines = null;
-  for (let i = 0; i < 6; i += 1) {
-    const result = buildLines(topOffset);
-    if (!result) return null;
-    if (!result.lines) {
-      if (!Number.isFinite(result.requiredOffset)) return null;
-      const nextOffset = Math.max(topOffset, result.requiredOffset);
-      if (nextOffset <= topOffset + 0.1) return null;
-      topOffset = nextOffset;
-      continue;
-    }
-    lines = result.lines;
-    const centeredOffset = Math.max(0, (availableHeight - lines.length * lineHeightPx) / 2);
-    topOffset = Math.max(topOffset, centeredOffset);
-    break;
+  for (let lineCount = targetLines; lineCount >= 1; lineCount -= 1) {
+    const layout = buildLayoutForLines(lineCount);
+    if (layout) return layout;
   }
 
-  if (!lines || !lines.length || lines.length > maxLines) return null;
-  if (topOffset + lines.length * lineHeightPx > availableHeight) return null;
-
-  const allowedWidths = lines.map((_, index) => {
-    const centerY = metrics.top + topOffset + (index + 0.5) * lineHeightPx;
-    return safeWidthAt(centerY);
-  });
-
-  const fits = lines.every((line, index) => line.width + gutter <= allowedWidths[index] + 0.01);
-  if (!fits) return null;
-
-  return {
-    lines,
-    topOffset,
-    lineHeight: lineHeightPx,
-    allowedWidths,
-    fontSize: fontSizePx,
-    letterSpacing: letterSpacingPx,
-    metrics,
-  };
+  return null;
 };
 
 const renderMagicAnswerLines = (layout) => {
@@ -2179,7 +2255,7 @@ const fitMagicAnswer = () => {
   if (!boxMetrics) return;
 
   const baseSizePx = magicAnswerMeasure.baseSizePx;
-  const minSizePx = Math.max(8, Math.round(baseSizePx * 0.45));
+  const minSizePx = Math.max(6, Math.round(baseSizePx * 0.32));
   const maxSizePx = baseSizePx;
   let low = minSizePx;
   let high = maxSizePx;
@@ -2206,39 +2282,25 @@ const fitMagicAnswer = () => {
   }
 
   if (!bestLayout) {
-    const letterSpacingPx = computeMagicLetterSpacingPx(minSizePx);
-    const lineHeightPx = magicAnswerMeasure.lineHeightRatio * minSizePx;
-    bestLayout = wrapMagicAnswerLines(
-      text,
-      minSizePx,
-      letterSpacingPx,
-      lineHeightPx,
-      boxMetrics.width,
-      boxMetrics.height
-    );
+    for (let size = minSizePx; size >= 4; size -= 0.5) {
+      const letterSpacingPx = computeMagicLetterSpacingPx(size);
+      const lineHeightPx = magicAnswerMeasure.lineHeightRatio * size;
+      const layout = wrapMagicAnswerLines(
+        text,
+        size,
+        letterSpacingPx,
+        lineHeightPx,
+        boxMetrics.width,
+        boxMetrics.height
+      );
+      if (layout) {
+        bestLayout = layout;
+        break;
+      }
+    }
   }
 
-  if (!bestLayout) {
-    while (magicAnswerLines.firstChild) {
-      magicAnswerLines.removeChild(magicAnswerLines.firstChild);
-    }
-    const fallbackLineHeight = magicAnswerMeasure.lineHeightRatio * minSizePx;
-    const metrics = getTriangleMetrics(boxMetrics.width, boxMetrics.height);
-    const span = document.createElement('span');
-    span.className = 'magic-layer__answer-line';
-    span.style.width = `${metrics.baseWidth.toFixed(2)}px`;
-    span.style.height = `${fallbackLineHeight.toFixed(2)}px`;
-    span.style.lineHeight = `${fallbackLineHeight.toFixed(2)}px`;
-    span.style.top = `${(metrics.top + (metrics.height - fallbackLineHeight) / 2).toFixed(2)}px`;
-    span.textContent = text.toUpperCase();
-    magicAnswerLines.style.fontSize = `${minSizePx}px`;
-    magicAnswerLines.style.letterSpacing = `${computeMagicLetterSpacingPx(minSizePx)}px`;
-    magicAnswerLines.style.lineHeight = `${fallbackLineHeight.toFixed(3)}px`;
-    magicAnswerLines.style.top = '0px';
-    magicAnswerLines.style.height = '100%';
-    magicAnswerLines.appendChild(span);
-    return;
-  }
+  if (!bestLayout) return;
 
   renderMagicAnswerLines(bestLayout);
 };
@@ -2297,14 +2359,23 @@ const animateMagicOrb = () => {
 const revealMagicAnswer = (source) => {
   const now = Date.now();
   if (now - lastMagicShake < MAGIC_SHAKE_COOLDOWN) return;
+  if (magicRevealTimer || (magicOrb && magicOrb.classList.contains('is-revealing'))) return;
   lastMagicShake = now;
   if (magicRevealTimer) {
     window.clearTimeout(magicRevealTimer);
     magicRevealTimer = null;
   }
   animateMagicOrb();
+  syncMagicFogSpeed();
+  if (magicFogVideo && magicFogVideo.paused) {
+    magicFogVideo.play().catch(() => {});
+  }
+  clearMagicAnswerLines();
   setMagicStatus(getMagicPendingStatus());
   if (magicOrb) magicOrb.classList.add('is-revealing');
+  const revealDelay =
+    MAGIC_REVEAL_DELAY_MIN +
+    Math.round(Math.random() * (MAGIC_REVEAL_DELAY_MAX - MAGIC_REVEAL_DELAY_MIN));
   magicRevealTimer = window.setTimeout(() => {
     magicRevealTimer = null;
     if (magicOrb) {
@@ -2315,7 +2386,7 @@ const revealMagicAnswer = (source) => {
     setMagicAnswer(pickRandom(responses.length ? responses : [getMagicDefaultAnswer()]));
     const statusKey = source === 'shake' ? 'magic.status.shake_again' : 'magic.status.tap_again';
     setMagicStatus(t(statusKey));
-  }, MAGIC_REVEAL_DELAY);
+  }, revealDelay);
 };
 
 const supportsMotion = () => typeof window !== 'undefined' && 'DeviceMotionEvent' in window;
@@ -2409,6 +2480,7 @@ const openMagicModal = () => {
   openModal(magicModal);
   initMagicMotion();
   initMagicOrb3d();
+  syncMagicFogSpeed();
   scheduleMagicAnswerFit();
 };
 
